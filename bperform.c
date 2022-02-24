@@ -12,7 +12,7 @@
 #include <alsa/seq_midi_event.h>
 #include <stdio.h>
 #include "bperform.h"
-#define PORTACCNUM 84
+#define PORTACCNUM 65
 
 void targetMidiPortSelected( GtkWidget *menuItem);
 void ins0typeSelected( GtkWidget* combo, effects* ins0p);
@@ -25,20 +25,32 @@ snd_seq_t *handle;
 int source; // source alsa-client id;
 int sport = 0; // app's source MIDI port number
 int tport = 0; // target client's midi port number
-int portaStat = 0; // portament off(0-63) / on(64-127)
+int portaEnabled = 0; // portament off(0-63) / on(64-127)
+int monoEnabled = 0; // 0: poly, 1: mono
 
 struct _midiTarget midiTargets[10];
 int dstMaxEntries = 0;
 
 void portaCheckBoxChecked(void)
 {
-	if(portaStat){ // as the result of checking behavior, portament enabled
+	if(!portaEnabled){
 		sendCc(PORTACCNUM, 127);
 	}else{
 		sendCc(PORTACCNUM, 0);
 	}
 
-	portaStat = !portaStat;
+	portaEnabled = !portaEnabled;
+}
+
+void monoCheckBoxChecked(void)
+{
+	if(!monoEnabled){
+		sendExc(4, 0x08, 0x00, 0x5, 0x00);
+	}else{
+		sendExc(4, 0x08, 0x00, 0x5, 0x01);
+	}
+
+	monoEnabled = !monoEnabled;
 }
 
 void portaTimeChanged(GtkWidget* scale)
@@ -207,6 +219,7 @@ int main(int argc, char** argv)
 	GtkWidget* page0right;
 	GtkWidget* portaCheckBox;
 	GtkWidget* portaTimeScale;
+	GtkWidget* monoCheckBox;
 	GtkWidget* volBox;
 	GtkWidget* volLabel;
 	GtkWidget* volScale;
@@ -393,6 +406,7 @@ int main(int argc, char** argv)
 
 	portaCheckBox = gtk_check_button_new_with_label("Portament");
 	portaTimeScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
+	monoCheckBox = gtk_check_button_new_with_label("Mono");
 	pListComboBox = gtk_combo_box_text_new();
 	volBox =  gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	volLabel = gtk_label_new("V");
@@ -541,6 +555,7 @@ int main(int argc, char** argv)
 
 
 	g_signal_connect(G_OBJECT(portaCheckBox), "clicked", G_CALLBACK(portaCheckBoxChecked), NULL);
+	g_signal_connect(G_OBJECT(monoCheckBox), "clicked", G_CALLBACK(monoCheckBoxChecked), NULL);
 
 	// widgets boxing
 
@@ -550,6 +565,7 @@ int main(int argc, char** argv)
 	gtk_box_pack_start( GTK_BOX(page0left), attackBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(page0left), decayBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(page0left), releaseBox, FALSE, TRUE, 0);
+	gtk_box_pack_start( GTK_BOX(page0left), monoCheckBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(page0left), portaCheckBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(page0left), portaTimeScale, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(volBox), volLabel, FALSE, FALSE, 0);
