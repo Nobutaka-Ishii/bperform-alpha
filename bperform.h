@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#define PORTACCNUM 65
 
 struct _toneEntry {
 	gchar name[16];
@@ -62,7 +63,7 @@ struct _effects {
 	gchar currentInsType[64];
 };
 
-typedef struct _effects effects;
+typedef struct _effects effects_t;
 
 struct _insStrip {
 	GtkWidget* insertBox;
@@ -72,10 +73,19 @@ struct _insStrip {
 	GtkWidget* insLabel;
 	GtkWidget* insEditButton;
 	GtkWidget* editWindow;
-	effects* effectInfo;
+	effects_t* effectInfo;
 };
 
-typedef struct _insStrip insStrip;
+typedef struct _insStrip insStrip_t;
+
+struct _ac1 {
+	GtkWidget* window;
+	GtkWidget* combo;
+	GtkWidget* scale;
+	GtkWidget* label;
+};
+
+typedef struct _ac1 ac1_t;
 
 void pgmChange(int pn);
 void sendExc(guint length,...);
@@ -86,7 +96,25 @@ void choSend(GtkRange* range);
 void attackChanged(GtkRange* range);
 void releaseChanged(GtkRange* range);
 void decayChanged(GtkRange* range);
-void ins0changed(GtkRange* range, effects* ins0p);
-void ins1changed(GtkRange* range, effects* ins1p);
-void prepIns(effects* ins);
-
+void ins0changed(GtkRange* range, effects_t* ins0p);
+void ins1changed(GtkRange* range, effects_t* ins1p);
+void prepIns(effects_t* ins);
+void stereoInitSelected(void);
+void monoInitSelected(void);
+void ins0edit(GtkWidget* button, insStrip_t* ins0stripp);
+void targetMidiPortSelected( GtkWidget *label);
+void ins0typeSelected( GtkWidget* combo, effects_t* ins0p);
+void ins1typeSelected( GtkWidget* combo, effects_t* ins1p);
+void ins0targetChnlSelected( GtkWidget* combo);
+void ins1targetChnlSelected( GtkWidget* combo);
+void portaCheckBoxChecked(void);
+void monoCheckBoxChecked(void);
+void portaTimeChanged(GtkWidget* scale);
+void programSelected(GtkWidget* pListComboBox, GList* toneEntries);
+void ac1intensityChanged(ac1_t* ac1p);
+void ac1menuSelected(ac1_t* ac1p);
+gboolean delete_event (void);
+gboolean quit_button_pushed (GtkWidget* widget, GdkEvent *event, gpointer data);
+void destroy(void);
+void reverbsend( GtkRange *range, GdkEvent *event, gpointer data);
+void closeEditWindow(void);

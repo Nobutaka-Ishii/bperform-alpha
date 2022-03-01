@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <glib.h>
 
-void prepIns(effects* ins)
+void prepIns(effects_t* ins)
 {
 	insEffect* entry;
 

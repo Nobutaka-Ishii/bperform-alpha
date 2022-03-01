@@ -12,7 +12,6 @@
 #include <alsa/seq_midi_event.h>
 #include <stdio.h>
 #include "bperform.h"
-#define PORTACCNUM 84
 
 extern snd_seq_t* handle;
 extern int currentVarType;
@@ -31,10 +30,10 @@ void pgmChange(int pn);
 void sendExc(guint length,...);
 void sendCc(guint cc, guint val);
 void init_synth(void);
-void ins0changed(GtkRange* range, effects* ins0p);
-void ins1changed(GtkRange* range, effects* ins1p);
+void ins0changed(GtkRange* range, effects_t* ins0p);
+void ins1changed(GtkRange* range, effects_t* ins1p);
 
-void ins0changed(GtkRange* range, effects* ins0p)
+void ins0changed(GtkRange* range, effects_t* ins0p)
 {
 	GList* list = ins0p->effectList;
 	guint val = gtk_range_get_value(range);
@@ -52,7 +51,7 @@ void ins0changed(GtkRange* range, effects* ins0p)
 	}
 }
 
-void ins1changed(GtkRange* range, effects* ins1p)
+void ins1changed(GtkRange* range, effects_t* ins1p)
 {
 	GList* list = ins1p->effectList;
 	guint val = gtk_range_get_value(range);
@@ -183,3 +182,73 @@ void pgmChange(int pn)
     snd_seq_event_output(handle, &ev);
     snd_seq_drain_output(handle);
 }
+
+void stereoInitSelected(void)
+{
+	// set AD input as stereo signals : 11 00 00 01
+	sendExc(4, 0x11, 0x00, 0x00, 0x01);
+
+	// set AD1 input as line level signal : 10 00 00 01
+	sendExc(4, 0x10, 0x00, 0x00, 0x01);
+
+	//set AD2 input as line level signal : 10 01 00 01
+	//sendExc(4, 0x10, 0x01, 0x00, 0x01);
+
+	// set variation effect on the path of AD1/2
+	sendExc(4, 0x02, 0x01, 0x5b, 64);
+
+	// set send level into variation 100%
+	sendExc(4, 0x10, 0x00, 0x14, 127);
+
+	// set send level into directly chorus(effect1) 0%
+	sendExc(4, 0x10, 0x00, 0x12, 0);
+
+	// set variation to main path return level 0%
+	sendExc(4, 0x02, 0x01, 0x56, 0);
+
+	// AD input master volume 100%
+	sendExc(4, 0x10, 0x00, 0x0B, 127);
+
+	// Set effect1(reverb) send level zero.
+	sendExc(5, 0x2, 0x1, 0x0, 0x0, 0x0);
+
+	// Set var1effect through
+	sendExc(5, 0x2, 0x1, 0x40, 0x40, 0x0);
+}
+
+void monoInitSelected(void)
+{
+	// set AD input as monaural signal: 11 00 00 00
+	sendExc(4, 0x11, 0x00, 0x00, 0x00);
+
+	// set AD1 input as line level signal : 10 00 00 01
+	sendExc(4, 0x10, 0x00, 0x00, 0x01);
+
+	//set AD2 input as line level signal : 10 01 00 01
+	//sendExc(4, 0x10, 0x01, 0x00, 0x01);
+
+	// set variation effect on the path(insertion mode) of AD1/2
+	sendExc(4, 0x02, 0x01, 0x5b, 64);
+
+	// set send level into variation 100%
+	sendExc(4, 0x10, 0x00, 0x14, 127);
+
+	// set send level into directly chorus(effect1) 0%
+	sendExc(4, 0x10, 0x00, 0x12, 0);
+
+	// set variation to main path return level 0%
+	sendExc(4, 0x02, 0x01, 0x56, 0);
+
+	// AD1 input master volume 100% on left channel
+	sendExc(4, 0x10, 0x00, 0x0B, 127);
+
+	// AD2 input master volume 0% on right channel
+	sendExc(4, 0x10, 0x01, 0x0B, 0);
+
+	// Set effect1(reverb) send level zero.
+	sendExc(5, 0x2, 0x1, 0x0, 0x0, 0x0);
+
+	// Set var1effect mode as through
+	sendExc(5, 0x2, 0x1, 0x40, 0x40, 0x0);
+}
+

@@ -12,14 +12,6 @@
 #include <alsa/seq_midi_event.h>
 #include <stdio.h>
 #include "bperform.h"
-#define PORTACCNUM 65
-
-void targetMidiPortSelected( GtkWidget *menuItem);
-void ins0typeSelected( GtkWidget* combo, effects* ins0p);
-void ins1typeSelected( GtkWidget* combo, effects* ins1p);
-void ins0targetChnlSelected( GtkWidget* combo);
-void ins1targetChnlSelected( GtkWidget* combo);
-void ins0edit(GtkWidget* button, insStrip* ins0stripp);
 
 snd_seq_t *handle;
 int source; // source alsa-client id;
@@ -31,55 +23,7 @@ int monoEnabled = 0; // 0: poly, 1: mono
 struct _midiTarget midiTargets[10];
 int dstMaxEntries = 0;
 
-void portaCheckBoxChecked(void)
-{
-	if(!portaEnabled){
-		sendCc(PORTACCNUM, 127);
-	}else{
-		sendCc(PORTACCNUM, 0);
-	}
-
-	portaEnabled = !portaEnabled;
-}
-
-void monoCheckBoxChecked(void)
-{
-	if(!monoEnabled){
-		sendExc(4, 0x08, 0x00, 0x5, 0x00);
-	}else{
-		sendExc(4, 0x08, 0x00, 0x5, 0x01);
-	}
-
-	monoEnabled = !monoEnabled;
-}
-
-void portaTimeChanged(GtkWidget* scale)
-{
-	guint val = gtk_range_get_value( GTK_RANGE(scale) );
-	//g_print("%d\n", val);
-	sendCc(5, val);
-}
-
-void programSelected(GtkWidget* pListComboBox, GList* toneEntries){
-	gchar* pName;
-	GList* list;
-
-	list = toneEntries;
-
-	pName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(pListComboBox) );
-
-	do {
-		if( !strcmp(pName, ((toneEntry*)(list->data))->name ) ) break;
-		list = list->next;
-	} while( list );
-
-	sendCc(0, atoi( ((toneEntry*)(list->data))->msb) ); // bank select MSB 
-	sendCc(32, atoi( ((toneEntry*)(list->data))->lsb) ); // bank select LSB
-	pgmChange( atoi( ((toneEntry*)(list->data))->pc) );
-
-}
-
-static void createInsTypeComboBox(GtkWidget* comboBox, effects* insp)
+static void createInsTypeComboBox(GtkWidget* comboBox, effects_t* insp)
 {
 	GList* list = insp->effectList;
 
@@ -91,22 +35,25 @@ static void createInsTypeComboBox(GtkWidget* comboBox, effects* insp)
 
 }
 
+gchar* chnlInsComboBoxEntries[] = {"Off", "1", "2", "3", "4", "AD"};
+gchar* chnlVarComboBoxEntries[] = {"Off", "1", "2", "3", "4", "AD", "System"};
+
 static void createInsTargetChnlComboBox(GtkWidget* comboBox)
 {
-	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "Off");
-	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "1");
-	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "2");
-	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "3");
-	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "4");
+	int itr;
+	for( itr = 0; itr < sizeof(chnlInsComboBoxEntries) / sizeof(*chnlInsComboBoxEntries) ; itr++){
+		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox),\
+			chnlComboBoxEntries[itr]);
+	}
 }
 
 static void createVarTargetComboBox(GtkWidget* comboBox)
 {
-	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "Off");
-	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "1");
-	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "2");
-	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "3");
-	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "4");
+	int itr;
+	for( itr = 0; itr < sizeof(chnlVarComboBoxEntries) / sizeof(*chnlVarComboBoxEntries) ; itr++){
+		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox),\
+			chnlComboBoxEntries[itr]);
+	}
 }
 
 void createProgramListComboBox(GtkWidget* comboBox, tones* tonesp)
@@ -140,56 +87,15 @@ void createProgramListComboBox(GtkWidget* comboBox, tones* tonesp)
 	tonesp->toneEntries = list;
 }
 
-gboolean delete_event (void)
-{
-	g_print("delete event occurred\n");
-    snd_seq_disconnect_to(handle, sport, source, tport); 
-
-		// If returingn TRUE, application itself continues running.
-	return FALSE; // By FALSE, destroy handler will be called.
-}
-
-void destroy(void)
-{
-	g_print("destroy handler\n");
-	gtk_main_quit();
-}
-
-static gboolean quit_button_pushed
-(GtkWidget* widget, GdkEvent *event, gpointer data)
-{
-    snd_seq_disconnect_to(handle, sport, source, tport); 
-	gtk_main_quit();
-	return TRUE;
-}
-
-gboolean closeEditWindow(GtkWidget *widget, insStrip* insStripp)
-{
-	//g_print("effect type: %s subwindow closed.\n", insStripp->effectInfo->currentInsType);
-	//gtk_widget_destroy(widget);
-	g_print("edit window closed\n");
-	g_print("edit window closed\n");
-	g_print("edit window closed\n");
-	g_print("edit window closed\n");
-	return FALSE;
-}
-
-void reverbsend( GtkRange *range, GdkEvent *event, gpointer data)
-{
-	static guint cc = 91;
-	guint val = (guint) gtk_range_get_value(range);
-	sendCc(cc, val); // reverb send
-	//g_print("%d\n", val);
-}
-
 int main(int argc, char** argv)
 {
 	int itr;
-	effects ins0;
-	effects ins1;
-	insStrip ins0strip;
-	insStrip ins1strip;
+	effects_t ins0;
+	effects_t ins1;
+	insStrip_t ins0strip;
+	insStrip_t ins1strip;
 	tones tones;
+	ac1_t ac1;
 
 		// variables for alsa connection destination port
 	snd_seq_client_info_t *cinfo;
@@ -289,6 +195,19 @@ int main(int argc, char** argv)
 	GtkWidget* init;
 	GtkWidget* initDownlist;
 	GtkWidget* initialize;
+	GtkWidget* monoInit;
+	GtkWidget* stereoInit; 
+	GtkWidget* ac1menu;
+	GtkWidget* ac1window;
+	GtkWidget* ac1base;
+	GtkWidget* ac1boxUpper;
+	GtkWidget* ac1boxMiddle;
+	GtkWidget* ac1boxLower;
+	GtkWidget* ac1label;
+	GtkWidget* ac1combo;
+	GtkWidget* ac1intensity;
+	GtkWidget* ac1okButton;
+
 	GtkWidget* midiDstEachEntry; // variable for generating downlist entries in loop
 
 	source = snd_seq_open( &handle, "default", SND_SEQ_OPEN_DUPLEX, 0 );
@@ -311,9 +230,9 @@ int main(int argc, char** argv)
 
 	gtk_init(&argc, &argv);
 
-		// clear insert effect entries : I don't know why I need it.
-	memset(&ins0, 0, sizeof(effects));
-	memset(&ins1, 0, sizeof(effects));
+		// preparation for using glib list methods.
+	ins0.effectList = NULL;
+	ins1.effectList = NULL;
 
 		// main window and layouts
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -322,12 +241,31 @@ int main(int argc, char** argv)
 		// edit window and layouts
 	editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
+		// ac1 window and layouts
+	memset(&ac1, 0, sizeof(ac1_t));
+	ac1window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	ac1base = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	ac1boxUpper = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	ac1boxMiddle = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	ac1boxLower = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	ac1label = gtk_label_new("CC number");
+	ac1combo = gtk_combo_box_text_new(); // for CC target number input
+	ac1intensity= gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
+	ac1.window = ac1window;
+	ac1.combo = ac1combo;
+	ac1.scale = ac1intensity;
+	ac1.label = ac1label;
+
 	// create menubar bar
 	menubar = gtk_menu_bar_new();
 
 	initDownlist = gtk_menu_new();
 	init = gtk_menu_item_new_with_label("Initialize");
-	initialize = gtk_menu_item_new_with_label("Initialize MU100B");
+	initialize = gtk_menu_item_new_with_label("MU100B system init");
+	monoInit = gtk_menu_item_new_with_label("Mono AD init");
+	stereoInit = gtk_menu_item_new_with_label("Stereo AD init");
+	ac1menu = gtk_menu_item_new_with_label("AC1 configuration");
+	ac1okButton = gtk_button_new_with_label("OK");
 
 	connectDownlist = gtk_menu_new();
 	connect = gtk_menu_item_new_with_label("Connect");
@@ -339,6 +277,9 @@ int main(int argc, char** argv)
 	gtk_menu_shell_append(GTK_MENU_SHELL(menubar), init);
 	gtk_menu_item_set_submenu(GTK_MENU_ITEM(init), initDownlist);
 	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), initialize);
+	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), monoInit);
+	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), stereoInit);
+	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), ac1menu);
 	gtk_menu_shell_append(GTK_MENU_SHELL(menubar), connect);
 	gtk_menu_item_set_submenu(GTK_MENU_ITEM(connect), connectDownlist);
 	gtk_menu_shell_append(GTK_MENU_SHELL(menubar), help);
@@ -508,16 +449,21 @@ int main(int argc, char** argv)
 	gtk_range_set_inverted(GTK_RANGE(revReturnScale), TRUE);
 
 	// callback function settings
+
+		// window events by window manager
 	g_signal_connect(G_OBJECT(window), "delete_event",\
 		G_CALLBACK(delete_event), NULL);
 	g_signal_connect(G_OBJECT(window), "destroy",\
 		G_CALLBACK(destroy), NULL);
+
+		// menu selection
+	g_signal_connect(G_OBJECT(monoInit), "activate",\
+		G_CALLBACK(monoInitSelected), NULL);
+	g_signal_connect(G_OBJECT(stereoInit), "activate",\
+		G_CALLBACK(stereoInitSelected), NULL);
 	g_signal_connect(G_OBJECT(quit), "activate",\
 		G_CALLBACK(quit_button_pushed), NULL);
-	g_signal_connect(revSendScale, "value-changed",\
-		G_CALLBACK(revSend), NULL);
-	g_signal_connect(choSendScale, "value-changed",\
-		G_CALLBACK(choSend), NULL);
+
 
 		// combobox program select
 	g_signal_connect(G_OBJECT(pListComboBox), "changed", \
@@ -531,6 +477,7 @@ int main(int argc, char** argv)
 	g_signal_connect(G_OBJECT(releaseScale), "value-changed", \
 		G_CALLBACK(releaseChanged), NULL);
 
+		// insertion effect strips
 	g_signal_connect(G_OBJECT(ins0type), "changed", \
 		G_CALLBACK(ins0typeSelected), &ins0);
 	g_signal_connect(G_OBJECT(ins0scale), "value-changed", \
@@ -547,15 +494,29 @@ int main(int argc, char** argv)
 	g_signal_connect(G_OBJECT(ins1targetChnl), "changed", \
 		G_CALLBACK(ins1targetChnlSelected), NULL);
 
+		// ac1 window internal events
+	g_signal_connect(G_OBJECT(ac1intensity), "value-changed", \
+		G_CALLBACK(ac1intensityChanged), &ac1);
+	g_signal_connect(G_OBJECT(ac1menu), "activate", \
+		G_CALLBACK(ac1menuSelected), &ac1);
+
+	g_print("%s\n", gtk_label_get_text(GTK_LABEL((&ac1)->label) ));
+
 		// midi connection button actions
 	for(itr = 0; itr < dstMaxEntries; itr++){
 		g_signal_connect(midiTargets[itr].instance, "activate", \
 			G_CALLBACK(targetMidiPortSelected), NULL);
 	}
 
-
-	g_signal_connect(G_OBJECT(portaCheckBox), "clicked", G_CALLBACK(portaCheckBoxChecked), NULL);
-	g_signal_connect(G_OBJECT(monoCheckBox), "clicked", G_CALLBACK(monoCheckBoxChecked), NULL);
+		// voice page
+	g_signal_connect(revSendScale, "value-changed",\
+		G_CALLBACK(revSend), NULL);
+	g_signal_connect(choSendScale, "value-changed",\
+		G_CALLBACK(choSend), NULL);
+	g_signal_connect(G_OBJECT(portaCheckBox), "clicked",\
+		 G_CALLBACK(portaCheckBoxChecked), NULL);
+	g_signal_connect(G_OBJECT(monoCheckBox), "clicked",\
+		G_CALLBACK(monoCheckBoxChecked), NULL);
 
 	// widgets boxing
 
@@ -627,131 +588,17 @@ int main(int argc, char** argv)
 	gtk_box_pack_start( GTK_BOX(base), exceptMenu, TRUE, TRUE, 0);
 	gtk_container_add( GTK_CONTAINER(window), base);
 
+	gtk_box_pack_start( GTK_BOX(ac1boxUpper), ac1label, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(ac1boxUpper), ac1combo, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(ac1boxMiddle), ac1intensity, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(ac1boxLower), ac1okButton, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(ac1base), ac1boxUpper, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(ac1base), ac1boxMiddle, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(ac1base), ac1boxLower, TRUE, 0, 0);
+	gtk_container_add( GTK_CONTAINER(ac1window), ac1base);
 
 	gtk_widget_show_all(window);
-	//gtk_range_set_range(GTK_RANGE(revReturnScale), 23, 45);
 	gtk_main();
 	return 0;
-}
-
-void ins0targetChnlSelected( GtkWidget* combo)
-{
-	gchar *chnl;
-	chnl = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
-
-	if (!strcmp(chnl, "Off" ) ){
-		sendExc(4 , 0x03, 0x00, 0x0c, 0x7f);
-	} else if (!strcmp(chnl, "1" ) ){
-		sendExc(4 , 0x03, 0x00, 0x0c, 0x0);
-	} else if (!strcmp(chnl, "2" ) ){
-		sendExc(4 , 0x03, 0x00, 0x0c, 0x1);
-	} else if (!strcmp(chnl, "3" ) ){
-		sendExc(4 , 0x03, 0x00, 0x0c, 0x2);
-	} else if (!strcmp(chnl, "4" ) ){
-		sendExc(4 , 0x03, 0x00, 0x0c, 0x3);
-	}
-}
-
-void ins1targetChnlSelected( GtkWidget* combo)
-{
-	gchar *chnl;
-	chnl = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
-
-	if (!strcmp(chnl, "Off" ) ){
-		sendExc(4 , 0x03, 0x01, 0x0c, 0x7f);
-	} else if (!strcmp(chnl, "1" ) ){
-		sendExc(4 , 0x03, 0x01, 0x0c, 0x0);
-	} else if (!strcmp(chnl, "2" ) ){
-		sendExc(4 , 0x03, 0x01, 0x0c, 0x1);
-	} else if (!strcmp(chnl, "3" ) ){
-		sendExc(4 , 0x03, 0x01, 0x0c, 0x2);
-	} else if (!strcmp(chnl, "4" ) ){
-		sendExc(4 , 0x03, 0x00, 0x0c, 0x3);
-	}
-}
-
-void ins0typeSelected( GtkWidget* combo, effects* ins0p)
-{
-	gchar *eName; // selected effect name from the combo box entries.
-	GList* list = ins0p->effectList;
-
-	eName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
-
-	do {
-		if( !strcmp(eName, ((insEffect*)(list->data))->name ) ) break;
-		list = list->next;
-	} while( list );
-
-	strcpy(ins0p->currentInsType, ((insEffect*)list->data)->name);
-	sendExc(5 , 0x03, 0x00, 0x00, ((insEffect*)list->data)->msb, ((insEffect*)list->data)->lsb);
-	gtk_range_set_range(GTK_RANGE(ins0p->range), ((insEffect*)list->data)->param10.rangeMin,\
-		((insEffect*)list->data)->param10.rangeMax);
-}
-
-void ins1typeSelected( GtkWidget* combo, effects* ins1p)
-{
-	gchar *eName; // selected effect name from the combo box entries.
-	GList* list = ins1p->effectList;
-
-	eName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
-
-	do {
-		if( !strcmp(eName, ((insEffect*)(list->data))->name ) ) break;
-		list = list->next;
-	} while( list );
-
-	strcpy(ins1p->currentInsType, ((insEffect*)list->data)->name);
-	sendExc(5 , 0x03, 0x01, 0x00, ((insEffect*)list->data)->msb, ((insEffect*)list->data)->lsb);
-	gtk_range_set_range(GTK_RANGE(ins1p->range), ((insEffect*)list->data)->param10.rangeMin,\
-		((insEffect*)list->data)->param10.rangeMax);
-}
-
-
-void targetMidiPortSelected( GtkWidget *label){
-	const char *menuString;
-	char clientNumInStr[4];;
-	guint clientNum;
-	int itr = 0;
-
-	menuString = gtk_menu_item_get_label(GTK_MENU_ITEM(label));
-
-	memset(clientNumInStr, 0, 4);
-
-	while(menuString[itr] != '/'){
-		clientNumInStr[itr] = menuString[itr];
-		itr++;
-	}
-
-	clientNum = atoi(clientNumInStr);
-
-	for(itr=0; itr< dstMaxEntries ; itr++){
-		if( clientNum == midiTargets[itr].clientId) break;
-	}
-
-	if( midiTargets[itr].checked ){
-		snd_seq_disconnect_to(handle, 0, clientNum, 0);
-		midiTargets[itr].checked = 0;
-	} else {
-		snd_seq_connect_to(handle, 0, clientNum, 0);
-		midiTargets[itr].checked = 1;
-	}
-}
-
-void ins0edit(GtkWidget* button, insStrip* ins0stripp)
-{
-	GtkWidget* editWindowBox;
-	GtkWidget* label;
-
-	label = gtk_label_new(ins0stripp->effectInfo->currentInsType);
-	editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	
-	gtk_box_pack_start(GTK_BOX(editWindowBox), label, TRUE, TRUE, 0);
-	gtk_container_add( GTK_CONTAINER(ins0stripp->editWindow), editWindowBox);
-
-	g_signal_connect(G_OBJECT(ins0stripp->editWindow), "delete_event",\
-		G_CALLBACK(closeEditWindow), ins0stripp);
-
-	gtk_window_set_default_size(GTK_WINDOW(ins0stripp->editWindow), 200, 400);
-	gtk_widget_show_all(ins0stripp->editWindow);
 }
 
