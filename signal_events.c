@@ -10,7 +10,6 @@ extern int source; // source alsa-client id;
 extern int sport; // app's source MIDI port number
 extern int tport; // target client's midi port number
 extern int dstMaxEntries;
-extern struct _midiTarget midiTargets[10];
 extern snd_seq_t *handle;
 
 void ac1okButtonClicked(GtkWidget* button, ac1_t* ac1p)
@@ -50,33 +49,13 @@ void ins0edit(GtkWidget* button, insStrip_t* ins0stripp)
 }
 
 
-void targetMidiPortSelected( GtkWidget *label){
-	const char *menuString;
-	char clientNumInStr[4];;
-	guint clientNum;
-	int itr = 0;
-
-	menuString = gtk_menu_item_get_label(GTK_MENU_ITEM(label));
-
-	memset(clientNumInStr, 0, 4);
-
-	while(menuString[itr] != '/'){
-		clientNumInStr[itr] = menuString[itr];
-		itr++;
-	}
-
-	clientNum = atoi(clientNumInStr);
-
-	for(itr=0; itr< dstMaxEntries ; itr++){
-		if( clientNum == midiTargets[itr].clientId) break;
-	}
-
-	if( midiTargets[itr].checked ){
-		snd_seq_disconnect_to(handle, 0, clientNum, 0);
-		midiTargets[itr].checked = 0;
+void targetMidiPortSelected( GtkWidget *label, midiTarget_t* midiTarget_p){
+	if( midiTarget_p->checked){
+		snd_seq_disconnect_to(handle, 0, midiTarget_p->clientId, midiTarget_p->portId);
+		midiTarget_p->checked = 0;
 	} else {
-		snd_seq_connect_to(handle, 0, clientNum, 0);
-		midiTargets[itr].checked = 1;
+		snd_seq_connect_to(handle, 0, midiTarget_p->clientId, midiTarget_p->portId);
+		midiTarget_p->checked = 1;
 	}
 }
 

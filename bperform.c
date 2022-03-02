@@ -17,10 +17,6 @@ snd_seq_t *handle;
 int source; // source alsa-client id;
 int sport = 0; // app's source MIDI port number
 int tport = 0; // target client's midi port number
-int portaEnabled = 0; // portament off(0-63) / on(64-127)
-
-struct _midiTarget midiTargets[10];
-int dstMaxEntries = 0;
 
 void toggleMono(GtkWidget* checkbutton, monoInst_t* monoInst)
 {
@@ -98,13 +94,13 @@ void createProgramListComboBox(GtkWidget* comboBox, tones* tonesp)
 
 int main(int argc, char** argv)
 {
-	int itr;
 	effects_t ins0;
 	effects_t ins1;
 	insStrip_t ins0strip;
 	insStrip_t ins1strip;
 	tones tones;
 	ac1_t ac1;
+	GList* midiTargets = NULL;
 
 		// variables for alsa connection destination port
 	snd_seq_client_info_t *cinfo;
@@ -114,7 +110,6 @@ int main(int argc, char** argv)
 	snd_seq_client_info_alloca(&cinfo);
 	snd_seq_port_info_alloca(&pinfo);
 	snd_seq_client_info_set_client(cinfo, -1);
-	char midiTargetName[128];
 
 		// main window instances
 	GtkWidget* window;
@@ -216,7 +211,6 @@ int main(int argc, char** argv)
 	GtkWidget* intensityScale;
 	GtkWidget* ac1okButton;
 
-	GtkWidget* midiDstEachEntry; // variable for generating downlist entries in loop
 	monoInst_t monoInst;
 	portaInst_t portaInst;
 
@@ -294,40 +288,44 @@ int main(int argc, char** argv)
 
 	// midi connection target listing up
     while (snd_seq_query_next_client(handle, cinfo) >= 0) {
-        char strTmp[64];
+
+		midiTarget_t* midiTarget_p;
+		char midiTargetName[128]; // used for midi taget name construction
+        char strTmp[64]; // used for midi taget name construction
 
         /* reset query info */
         snd_seq_port_info_set_client(pinfo, snd_seq_client_info_get_client(cinfo));
         snd_seq_port_info_set_port(pinfo, -1);
 
 		while (snd_seq_query_next_port(handle, pinfo) >= 0) {
-			memset(midiTargetName, 0, 128);
-			memset(strTmp, 0, 64);
-			sprintf(strTmp, "%d", snd_seq_client_info_get_client(cinfo));
-			midiTargets[dstMaxEntries].clientId = snd_seq_client_info_get_client(cinfo);
-			   // omit client#0, which used in the system.
-			if(!midiTargets[dstMaxEntries].clientId) continue;
+			midiTarget_p = (midiTarget_t*)malloc( sizeof(midiTarget_t) );
+			midiTarget_p->clientId = snd_seq_client_info_get_client(cinfo);
+			midiTarget_p->portId = snd_seq_port_info_get_port(pinfo);
+			strcpy( midiTarget_p->clientName, snd_seq_port_info_get_name(pinfo) );
+			midiTarget_p->checked = 0;
 
+			// construction of entry name
+			memset(midiTargetName, 0, 128);
+			strcat(midiTargetName, midiTarget_p->clientName);
+
+			memset(strTmp, 0, 64);
+			strcat(midiTargetName, ":\t");
+			strcat(midiTargetName, strTmp);
+
+			memset(strTmp, 0, 64);
+			sprintf(strTmp, "%d", midiTarget_p->clientId);
 			strcat(midiTargetName, strTmp);
 			strcat(midiTargetName, " / ");
-			memset(strTmp, 0, 64);
-			sprintf(strTmp, "%d", snd_seq_port_info_get_port(pinfo));
-			midiTargets[dstMaxEntries].portId = snd_seq_port_info_get_port(pinfo);
-			midiTargets[dstMaxEntries].checked = 0;
 
+			memset(strTmp, 0, 64);
+			sprintf(strTmp, "%d", midiTarget_p->portId);
 			strcat(midiTargetName, strTmp);
-			strcat(midiTargetName, "\t");
-			memset(strTmp, 0, 64);
-			strcat(midiTargetName, snd_seq_port_info_get_name(pinfo));
-			strcpy(midiTargets[dstMaxEntries].clientName, midiTargetName);
 
-			midiDstEachEntry = gtk_check_menu_item_new_with_label(midiTargetName);
-			//midiDstEachEntry = gtk_menu_item_new_with_label(midiTargetName);
-			//gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(midiDstEachEntry), TRUE);
-			gtk_menu_shell_append(GTK_MENU_SHELL(connectDownlist), midiDstEachEntry) ;
+			midiTargets = g_list_append(midiTargets, midiTarget_p);
 
-			midiTargets[dstMaxEntries].instance = midiDstEachEntry;
-			dstMaxEntries++;
+			midiTarget_p->checkMenu = gtk_check_menu_item_new_with_label(midiTargetName);
+			gtk_menu_shell_append(GTK_MENU_SHELL(connectDownlist), midiTarget_p->checkMenu) ;
+
 		}
 	}
 
@@ -536,9 +534,12 @@ int main(int argc, char** argv)
 		G_CALLBACK(ac1okButtonClicked), &ac1);
 
 		// midi connection button actions
-	for(itr = 0; itr < dstMaxEntries; itr++){
-		g_signal_connect(midiTargets[itr].instance, "activate", \
-			G_CALLBACK(targetMidiPortSelected), NULL);
+	midiTargets = g_list_first(midiTargets);
+	while(midiTargets->next){
+		g_signal_connect( \
+			G_OBJECT( (GtkWidget*)( ((midiTarget_t*)(midiTargets->data))->checkMenu) ), \
+			"activate", G_CALLBACK(targetMidiPortSelected), midiTargets->data);
+		midiTargets = midiTargets->next;
 	}
 
 		// voice page
