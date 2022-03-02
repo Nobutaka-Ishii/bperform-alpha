@@ -216,7 +216,7 @@ void stereoInitSelected(void)
 	sendExc(5, 0x2, 0x1, 0x40, 0x40, 0x0);
 }
 
-void monoInitSelected(void)
+void monauralInitSelected(void)
 {
 	// set AD input as monaural signal: 11 00 00 00
 	sendExc(4, 0x11, 0x00, 0x00, 0x00);

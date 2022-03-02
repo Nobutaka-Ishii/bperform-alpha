@@ -18,12 +18,16 @@ int source; // source alsa-client id;
 int sport = 0; // app's source MIDI port number
 int tport = 0; // target client's midi port number
 int portaEnabled = 0; // portament off(0-63) / on(64-127)
-int monoEnabled = 0; // 0: poly, 1: mono
 
 struct _midiTarget midiTargets[10];
 int dstMaxEntries = 0;
 
-static void createInsTypeComboBox(GtkWidget* comboBox, effects_t* insp)
+void toggleMono(GtkWidget* checkbutton, monoInst_t* monoInst)
+{
+	monoInst->monoEnabled = !monoInst->monoEnabled;
+}
+
+void createInsTypeComboBox(GtkWidget* comboBox, effects_t* insp)
 {
 	GList* list = insp->effectList;
 
@@ -35,6 +39,11 @@ static void createInsTypeComboBox(GtkWidget* comboBox, effects_t* insp)
 
 }
 
+void createVarTypeComboBox(GtkWidget* comboBox, effects_t* varp)
+{
+}
+
+
 gchar* chnlInsComboBoxEntries[] = {"Off", "1", "2", "3", "4", "AD"};
 gchar* chnlVarComboBoxEntries[] = {"Off", "1", "2", "3", "4", "AD", "System"};
 
@@ -43,7 +52,7 @@ static void createInsTargetChnlComboBox(GtkWidget* comboBox)
 	int itr;
 	for( itr = 0; itr < sizeof(chnlInsComboBoxEntries) / sizeof(*chnlInsComboBoxEntries) ; itr++){
 		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox),\
-			chnlComboBoxEntries[itr]);
+			chnlInsComboBoxEntries[itr]);
 	}
 }
 
@@ -52,7 +61,7 @@ static void createVarTargetComboBox(GtkWidget* comboBox)
 	int itr;
 	for( itr = 0; itr < sizeof(chnlVarComboBoxEntries) / sizeof(*chnlVarComboBoxEntries) ; itr++){
 		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox),\
-			chnlComboBoxEntries[itr]);
+			chnlVarComboBoxEntries[itr]);
 	}
 }
 
@@ -113,9 +122,6 @@ int main(int argc, char** argv)
 	GtkWidget* menubar; // occupies top place
 	GtkWidget* exceptMenu; // occupies button place
 
-		// edit window instances
-	GtkWidget* editWindow;
-
 	GtkWidget* voicePages;
 
 	// page0 entries
@@ -167,6 +173,8 @@ int main(int argc, char** argv)
 	GtkWidget* ins0targetChnl;
 	GtkWidget* ins0label;
 	GtkWidget* ins0editButton;
+	GtkWidget* ins0editWindow;
+	GtkWidget* ins0editWindowBox;
 
 	GtkWidget* insert1box;
 	GtkWidget* ins1type;
@@ -195,7 +203,7 @@ int main(int argc, char** argv)
 	GtkWidget* init;
 	GtkWidget* initDownlist;
 	GtkWidget* initialize;
-	GtkWidget* monoInit;
+	GtkWidget* monauralInit;
 	GtkWidget* stereoInit; 
 	GtkWidget* ac1menu;
 	GtkWidget* ac1window;
@@ -204,11 +212,13 @@ int main(int argc, char** argv)
 	GtkWidget* ac1boxMiddle;
 	GtkWidget* ac1boxLower;
 	GtkWidget* ac1label;
-	GtkWidget* ac1combo;
-	GtkWidget* ac1intensity;
+	GtkWidget* ccSpinbutton;
+	GtkWidget* intensityScale;
 	GtkWidget* ac1okButton;
 
 	GtkWidget* midiDstEachEntry; // variable for generating downlist entries in loop
+	monoInst_t monoInst;
+	portaInst_t portaInst;
 
 	source = snd_seq_open( &handle, "default", SND_SEQ_OPEN_DUPLEX, 0 );
 	if( source < 0 ){
@@ -239,7 +249,7 @@ int main(int argc, char** argv)
 	base = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
 		// edit window and layouts
-	editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	ins0editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 		// ac1 window and layouts
 	memset(&ac1, 0, sizeof(ac1_t));
@@ -248,23 +258,27 @@ int main(int argc, char** argv)
 	ac1boxUpper = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	ac1boxMiddle = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	ac1boxLower = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	ac1label = gtk_label_new("CC number");
-	ac1combo = gtk_combo_box_text_new(); // for CC target number input
-	ac1intensity= gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
+	ac1label = gtk_label_new("CC#");
+	ccSpinbutton = gtk_spin_button_new_with_range(0, 95, 1); // for CC target number input
+	intensityScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, -64, 63, 1);
 	ac1.window = ac1window;
-	ac1.combo = ac1combo;
-	ac1.scale = ac1intensity;
+	ac1.ccSpinbutton = ccSpinbutton;
+	ac1.intensityScale = intensityScale;
 	ac1.label = ac1label;
+	ac1.cc = 45; // my default cc value
+	ac1.tmpCc = 45; // my default cc value
+	ac1.intensity = 63; // my default intensity value
+	ac1.tmpIntensity = 63; // my default intensity value
 
 	// create menubar bar
 	menubar = gtk_menu_bar_new();
 
 	initDownlist = gtk_menu_new();
 	init = gtk_menu_item_new_with_label("Initialize");
-	initialize = gtk_menu_item_new_with_label("MU100B system init");
-	monoInit = gtk_menu_item_new_with_label("Mono AD init");
+	initialize = gtk_menu_item_new_with_label("MU100B init");
+	monauralInit = gtk_menu_item_new_with_label("Mono AD init");
 	stereoInit = gtk_menu_item_new_with_label("Stereo AD init");
-	ac1menu = gtk_menu_item_new_with_label("AC1 configuration");
+	ac1menu = gtk_menu_item_new_with_label("AC1 config");
 	ac1okButton = gtk_button_new_with_label("OK");
 
 	connectDownlist = gtk_menu_new();
@@ -277,7 +291,7 @@ int main(int argc, char** argv)
 	gtk_menu_shell_append(GTK_MENU_SHELL(menubar), init);
 	gtk_menu_item_set_submenu(GTK_MENU_ITEM(init), initDownlist);
 	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), initialize);
-	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), monoInit);
+	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), monauralInit);
 	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), stereoInit);
 	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), ac1menu);
 	gtk_menu_shell_append(GTK_MENU_SHELL(menubar), connect);
@@ -418,7 +432,7 @@ int main(int argc, char** argv)
 	ins0strip.insScale = ins0scale;
 	ins0strip.insTargetChnl = ins0targetChnl;
 	ins0strip.effectInfo = &ins0;
-	ins0strip.editWindow = editWindow;
+	ins0strip.editWindow = ins0editWindow;
 
 	insert1box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	ins1label = gtk_label_new("Insert2");
@@ -430,9 +444,22 @@ int main(int argc, char** argv)
 	ins1.range = ins1scale;
 	prepIns(&ins1);
 
+	monoInst.checkBox = monoCheckBox;
+	monoInst.monoEnabled = 0; // poly mode in default.
+
+	portaInst.checkBox = portaCheckBox;
+	portaInst.portaEnabled = 0;
+	portaInst.scale = portaTimeScale;
+
 	createInsTargetChnlComboBox(ins1targetChnl);
 	createInsTypeComboBox(ins1type, &ins1);
 
+	// edit window
+	ins0editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	gtk_container_add( GTK_CONTAINER(ins0editWindow), ins0editWindowBox);
+
+
+	//
 	gtk_scale_set_value_pos(GTK_SCALE(choSendScale), GTK_POS_BOTTOM);
 	gtk_range_set_inverted(GTK_RANGE(choSendScale), TRUE);
 	gtk_scale_set_value_pos(GTK_SCALE(revSendScale), GTK_POS_BOTTOM);
@@ -457,8 +484,8 @@ int main(int argc, char** argv)
 		G_CALLBACK(destroy), NULL);
 
 		// menu selection
-	g_signal_connect(G_OBJECT(monoInit), "activate",\
-		G_CALLBACK(monoInitSelected), NULL);
+	g_signal_connect(G_OBJECT(monauralInit), "activate",\
+		G_CALLBACK(monauralInitSelected), NULL);
 	g_signal_connect(G_OBJECT(stereoInit), "activate",\
 		G_CALLBACK(stereoInitSelected), NULL);
 	g_signal_connect(G_OBJECT(quit), "activate",\
@@ -486,6 +513,8 @@ int main(int argc, char** argv)
 		G_CALLBACK(ins0targetChnlSelected), NULL);
 	g_signal_connect(G_OBJECT(ins0editButton), "clicked", \
 		G_CALLBACK(ins0edit), &ins0strip);
+	g_signal_connect(G_OBJECT(ins0editWindow), "delete_event",\
+		G_CALLBACK(gtk_widget_hide), NULL);
 
 	g_signal_connect(G_OBJECT(ins1type), "changed", \
 		G_CALLBACK(ins1typeSelected), &ins1);
@@ -495,12 +524,14 @@ int main(int argc, char** argv)
 		G_CALLBACK(ins1targetChnlSelected), NULL);
 
 		// ac1 window internal events
-	g_signal_connect(G_OBJECT(ac1intensity), "value-changed", \
+	g_signal_connect(G_OBJECT(intensityScale), "value-changed", \
 		G_CALLBACK(ac1intensityChanged), &ac1);
-	g_signal_connect(G_OBJECT(ac1menu), "activate", \
+	g_signal_connect(G_OBJECT(ccSpinbutton), "value-changed", \
+		G_CALLBACK(ac1ccChanged), &ac1);
+	g_signal_connect(G_OBJECT(ac1menu), "activate",\
 		G_CALLBACK(ac1menuSelected), &ac1);
-
-	g_print("%s\n", gtk_label_get_text(GTK_LABEL((&ac1)->label) ));
+	g_signal_connect(G_OBJECT(ac1okButton), "clicked",\
+		G_CALLBACK(ac1okButtonClicked), &ac1);
 
 		// midi connection button actions
 	for(itr = 0; itr < dstMaxEntries; itr++){
@@ -514,9 +545,9 @@ int main(int argc, char** argv)
 	g_signal_connect(choSendScale, "value-changed",\
 		G_CALLBACK(choSend), NULL);
 	g_signal_connect(G_OBJECT(portaCheckBox), "clicked",\
-		 G_CALLBACK(portaCheckBoxChecked), NULL);
+		 G_CALLBACK(portaCheckBoxChecked), &portaInst);
 	g_signal_connect(G_OBJECT(monoCheckBox), "clicked",\
-		G_CALLBACK(monoCheckBoxChecked), NULL);
+		G_CALLBACK(toggleMono), &monoInst);
 
 	// widgets boxing
 
@@ -589,8 +620,8 @@ int main(int argc, char** argv)
 	gtk_container_add( GTK_CONTAINER(window), base);
 
 	gtk_box_pack_start( GTK_BOX(ac1boxUpper), ac1label, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(ac1boxUpper), ac1combo, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(ac1boxMiddle), ac1intensity, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(ac1boxUpper), ccSpinbutton, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(ac1boxMiddle), intensityScale, TRUE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(ac1boxLower), ac1okButton, TRUE, 0, 0);
 	gtk_box_pack_start( GTK_BOX(ac1base), ac1boxUpper, TRUE, 0, 0);
 	gtk_box_pack_start( GTK_BOX(ac1base), ac1boxMiddle, TRUE, 0, 0);

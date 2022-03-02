@@ -12,31 +12,36 @@ extern int tport; // target client's midi port number
 extern int dstMaxEntries;
 extern struct _midiTarget midiTargets[10];
 extern snd_seq_t *handle;
-extern int portaEnabled;
-extern int monoEnabled;
 
-void ac1intensityChanged(ac1_t* ac1){
+void ac1okButtonClicked(GtkWidget* button, ac1_t* ac1p)
+{
+	ac1p->cc = ac1p->tmpCc;
+	ac1p->intensity = ac1p->tmpIntensity;
+	sendExc(4, 0x03, 0x00, 0x10, ac1p->intensity);
+	sendExc(4, 0x08, 0x00, 0x59, ac1p->cc);
+	gtk_widget_hide( ac1p->window );
 }
 
-void ac1menuSelected(ac1_t* ac1p){
-	gchar* str;
-	str = gtk_label_get_text( GTK_LABEL(ac1p->label)) ;
-	g_print("%s\n", str);
+void ac1intensityChanged(GtkWidget* scale, ac1_t* ac1p)
+{
+	gint val = gtk_range_get_value( GTK_RANGE(scale) );
+	ac1p->tmpIntensity = val;
+}
+
+void ac1ccChanged(GtkWidget* spinbutton, ac1_t* ac1p)
+{
+	guint val = gtk_spin_button_get_value( GTK_SPIN_BUTTON(spinbutton) );
+	ac1p->tmpCc = val;
+}
+
+void ac1menuSelected(GtkWidget* menuButton, ac1_t* ac1p){
+	gtk_widget_show_all(ac1p->window);
 }
 
 void ins0edit(GtkWidget* button, insStrip_t* ins0stripp)
 {
 	GtkWidget* editWindowBox;
 	GtkWidget* label;
-
-	label = gtk_label_new(ins0stripp->effectInfo->currentInsType);
-	editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-
-	gtk_box_pack_start(GTK_BOX(editWindowBox), label, TRUE, TRUE, 0);
-	gtk_container_add( GTK_CONTAINER(ins0stripp->editWindow), editWindowBox);
-
-	g_signal_connect(G_OBJECT(ins0stripp->editWindow), "delete_event",\
-		G_CALLBACK(closeEditWindow), ins0stripp);
 
 	gtk_window_set_default_size(GTK_WINDOW(ins0stripp->editWindow), 200, 400);
 	gtk_widget_show_all(ins0stripp->editWindow);
@@ -149,26 +154,26 @@ void ins1targetChnlSelected( GtkWidget* combo)
 	}
 }
 
-void portaCheckBoxChecked(void)
+void portaCheckBoxChecked(GtkWidget* checkbutton, portaInst_t* portaInst)
 {
-	if(!portaEnabled){
+	if(!portaInst->portaEnabled){
 		sendCc(PORTACCNUM, 127);
 	}else{
 		sendCc(PORTACCNUM, 0);
 	}
 
-	portaEnabled = !portaEnabled;
+	portaInst->portaEnabled = !portaInst->portaEnabled;
 }
 
-void monoCheckBoxChecked(void)
+void monoCheckBoxChecked(GtkWidget* checkbutton, monoInst_t* monoInst)
 {
-	if(!monoEnabled){
+	if(!monoInst->monoEnabled){
 		sendExc(4, 0x08, 0x00, 0x5, 0x00);
 	}else{
 		sendExc(4, 0x08, 0x00, 0x5, 0x01);
 	}
 
-	monoEnabled = !monoEnabled;
+	monoInst->monoEnabled = !monoInst->monoEnabled;
 }
 
 void portaTimeChanged(GtkWidget* scale)
