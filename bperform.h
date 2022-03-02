@@ -90,6 +90,7 @@ struct _insStrip {
 	GtkWidget* insLabel;
 	GtkWidget* insEditButton;
 	GtkWidget* editWindow;
+	GtkWidget* editWindowBox;
 	effects_t* effectInfo;
 };
 
@@ -137,7 +138,7 @@ gboolean delete_event (void);
 gboolean quit_button_pushed (GtkWidget* widget, GdkEvent *event, gpointer data);
 void destroy(void);
 void reverbsend( GtkRange* range, GdkEvent* event, gpointer data);
-void closeEditWindow(void);
+void closeEditWindow(GtkWidget* window, insStrip_t* insStripp);
 void toggleMono(GtkWidget* checkbutton, monoInst_t* monoInst);
 void ac1intensityChanged(GtkWidget* scale, ac1_t* ac1p);
 void ac1ccChanged(GtkWidget* spinbutton, ac1_t* ac1p);

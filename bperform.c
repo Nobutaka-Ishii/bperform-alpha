@@ -251,7 +251,7 @@ int main(int argc, char** argv)
 		// edit window and layouts
 	ins0editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
-		// ac1 window and layouts
+		// ac1 window and layouts instance generation
 	memset(&ac1, 0, sizeof(ac1_t));
 	ac1window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	ac1base = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -261,14 +261,6 @@ int main(int argc, char** argv)
 	ac1label = gtk_label_new("CC#");
 	ccSpinbutton = gtk_spin_button_new_with_range(0, 95, 1); // for CC target number input
 	intensityScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, -64, 63, 1);
-	ac1.window = ac1window;
-	ac1.ccSpinbutton = ccSpinbutton;
-	ac1.intensityScale = intensityScale;
-	ac1.label = ac1label;
-	ac1.cc = 45; // my default cc value
-	ac1.tmpCc = 45; // my default cc value
-	ac1.intensity = 63; // my default intensity value
-	ac1.tmpIntensity = 63; // my default intensity value
 
 	// create menubar bar
 	menubar = gtk_menu_bar_new();
@@ -414,6 +406,8 @@ int main(int argc, char** argv)
 	gtk_widget_set_size_request(revBlankBox, -1, 72); // width, height
 
 	insert0box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+		// edit subwindow related to ins0 strip
+	ins0editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	ins0label = gtk_label_new("Insert1");
 	ins0editButton = gtk_button_new_with_label("Edit");
 	ins0scale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1, 127, 1);
@@ -425,14 +419,16 @@ int main(int argc, char** argv)
 		// create combobox entries of effect target channel
 	createInsTargetChnlComboBox(ins0targetChnl);
 	createInsTypeComboBox(ins0type, &ins0);
-		// ins0 object preparation
+		// ins0 object construction
 	ins0strip.insertBox = insert0box;
 	ins0strip.insLabel = ins0label;
 	ins0strip.insEditButton = ins0editButton;
 	ins0strip.insScale = ins0scale;
 	ins0strip.insTargetChnl = ins0targetChnl;
 	ins0strip.effectInfo = &ins0;
+	gtk_container_add( GTK_CONTAINER(ins0editWindow), ins0editWindowBox);
 	ins0strip.editWindow = ins0editWindow;
+	ins0strip.editWindowBox = ins0editWindowBox; 
 
 	insert1box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	ins1label = gtk_label_new("Insert2");
@@ -454,10 +450,15 @@ int main(int argc, char** argv)
 	createInsTargetChnlComboBox(ins1targetChnl);
 	createInsTypeComboBox(ins1type, &ins1);
 
-	// edit window
-	ins0editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	gtk_container_add( GTK_CONTAINER(ins0editWindow), ins0editWindowBox);
-
+	// ac1 instance construction
+	ac1.window = ac1window;
+	ac1.ccSpinbutton = ccSpinbutton;
+	ac1.intensityScale = intensityScale;
+	ac1.label = ac1label;
+	ac1.cc = 45; // my default cc value
+	ac1.tmpCc = 45; // my default cc value
+	ac1.intensity = 63; // my default intensity value
+	ac1.tmpIntensity = 63; // my default intensity value
 
 	//
 	gtk_scale_set_value_pos(GTK_SCALE(choSendScale), GTK_POS_BOTTOM);
@@ -513,8 +514,9 @@ int main(int argc, char** argv)
 		G_CALLBACK(ins0targetChnlSelected), NULL);
 	g_signal_connect(G_OBJECT(ins0editButton), "clicked", \
 		G_CALLBACK(ins0edit), &ins0strip);
-	g_signal_connect(G_OBJECT(ins0editWindow), "delete_event",\
-		G_CALLBACK(gtk_widget_hide), NULL);
+	g_signal_connect(G_OBJECT(ins0editWindow), "delete_event", \
+		G_CALLBACK(closeEditWindow), &ins0strip);
+
 
 	g_signal_connect(G_OBJECT(ins1type), "changed", \
 		G_CALLBACK(ins1typeSelected), &ins1);

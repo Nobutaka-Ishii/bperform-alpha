@@ -24,7 +24,7 @@ void ac1okButtonClicked(GtkWidget* button, ac1_t* ac1p)
 
 void ac1intensityChanged(GtkWidget* scale, ac1_t* ac1p)
 {
-	gint val = gtk_range_get_value( GTK_RANGE(scale) );
+	gint val = gtk_range_get_value( GTK_RANGE(scale) ) + 64;
 	ac1p->tmpIntensity = val;
 }
 
@@ -40,10 +40,12 @@ void ac1menuSelected(GtkWidget* menuButton, ac1_t* ac1p){
 
 void ins0edit(GtkWidget* button, insStrip_t* ins0stripp)
 {
-	GtkWidget* editWindowBox;
-	GtkWidget* label;
+	GtkWidget* paramLabel;
 
+	paramLabel = gtk_label_new(ins0stripp->effectInfo->currentInsType);
+	gtk_box_pack_start( GTK_BOX(ins0stripp->editWindowBox), paramLabel, TRUE, 0, 0);
 	gtk_window_set_default_size(GTK_WINDOW(ins0stripp->editWindow), 200, 400);
+	//gtk_widget_set_sensitive(ins0stripp->insEditButton, FALSE);
 	gtk_widget_show_all(ins0stripp->editWindow);
 }
 
@@ -233,6 +235,9 @@ void reverbsend( GtkRange *range, GdkEvent *event, gpointer data)
     //g_print("%d\n", val);
 }
 
-void closeEditWindow(void){
+void closeEditWindow(GtkWidget* window, insStrip_t* insStripp)
+{
+	//gtk_widget_set_sensitive(insStripp->insEditButton, FALSE);
+	gtk_widget_hide(window);
 }
 
