@@ -73,8 +73,8 @@ void ins0typeSelected( GtkWidget* combo, effects_t* ins0p)
 
 	strcpy(ins0p->currentInsType, ((insEffect*)list->data)->name);
 	sendExc(5 , 0x03, 0x00, 0x00, ((insEffect*)list->data)->msb, ((insEffect*)list->data)->lsb);
-	gtk_range_set_range(GTK_RANGE(ins0p->range), ((insEffect*)list->data)->param10.rangeMin,\
-		((insEffect*)list->data)->param10.rangeMax);
+	gtk_range_set_range(GTK_RANGE(ins0p->range), ((insEffect*)list->data)->param[10].rangeMin,\
+		((insEffect*)list->data)->param[10].rangeMax);
 }
 
 void ins1typeSelected( GtkWidget* combo, effects_t* ins1p)
@@ -91,8 +91,8 @@ void ins1typeSelected( GtkWidget* combo, effects_t* ins1p)
 
 	strcpy(ins1p->currentInsType, ((insEffect*)list->data)->name);
 	sendExc(5 , 0x03, 0x01, 0x00, ((insEffect*)list->data)->msb, ((insEffect*)list->data)->lsb);
-	gtk_range_set_range(GTK_RANGE(ins1p->range), ((insEffect*)list->data)->param10.rangeMin,\
-		((insEffect*)list->data)->param10.rangeMax);
+	gtk_range_set_range(GTK_RANGE(ins1p->range), ((insEffect*)list->data)->param[10].rangeMin,\
+		((insEffect*)list->data)->param[10].rangeMax);
 }
 
 void ins0targetChnlSelected( GtkWidget* combo)

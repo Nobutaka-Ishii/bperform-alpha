@@ -27,34 +27,19 @@ typedef struct _midiTarget midiTarget_t;
 
 
 struct _param{
-	gchar label[64];
-	guint rangeMax;
-	guint rangeMin;
+	gchar* label;
+	gint rangeMax;
+	gint rangeMin;
 };
 
 typedef struct _param param;
 
 struct _insEffect {
-	gchar name[64];
+	gchar* name;
 	guint msb;
 	guint lsb;
 	guint addrWidth; // some effects needs 2 byte with parameter value specification.
-	param param1; // MU100B's each effects has max 16 parameters.
-	param param2;
-	param param3;
-	param param4;
-	param param5;
-	param param6;
-	param param7;
-	param param8;
-	param param9;
-	param param10;
-	param param11;
-	param param12;
-	param param13;
-	param param14;
-	param param15;
-	param param16;
+	param param[16]; // MU100B's each effects has max 16 parameters.
 };
 
 typedef struct _insEffect insEffect;
@@ -145,3 +130,5 @@ void toggleMono(GtkWidget* checkbutton, monoInst_t* monoInst);
 void ac1intensityChanged(GtkWidget* scale, ac1_t* ac1p);
 void ac1ccChanged(GtkWidget* spinbutton, ac1_t* ac1p);
 void ac1okButtonClicked(GtkWidget* button, ac1_t* ac1p);
+char** splitline(char* original, char delim, int* fields);
+
