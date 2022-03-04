@@ -7,10 +7,9 @@
 #define EFFECT_NAME_LENGTH 64
 #define PARAM_LABEL_NAME_LENGTH 32
 
-void prepIns(effects_t* ins)
+void prepEffects(effects_t* effects, FILE* fp)
 {
 	insEffect* effectEntry;
-	FILE* fp;
 	char* line = NULL;
 	size_t n = 0;
 	int itr;
@@ -18,16 +17,13 @@ void prepIns(effects_t* ins)
 	char** eachEffect;
 	char** param;
 
-	ins->effectList = NULL; 
-
-	fp = fopen("./insList.txt", "r");
 	while( (getline(&line, &n, fp) ) != -1 ){
 		if( line[0] == '\n' ) continue;
 		line[ strlen(line) - 1] = '\0'; // remove last lf character.
 		effectEntry = (insEffect*)malloc(sizeof(insEffect));
 		memset(effectEntry, 0, sizeof(insEffect));
 
-		ins->effectList = g_list_append(ins->effectList, effectEntry);
+		effects->effectList = g_list_append(effects->effectList, effectEntry);
 
 		eachEffect = splitline(line, '\t', &fields);
 		for(itr=0; itr < 18; itr++){ // effect name, msb:lsb:width field, and 1st to 16th parameter.
@@ -56,5 +52,4 @@ void prepIns(effects_t* ins)
 		}
 	}
 }
-
 

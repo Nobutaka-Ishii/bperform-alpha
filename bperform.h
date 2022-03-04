@@ -107,7 +107,7 @@ void releaseChanged(GtkRange* range);
 void decayChanged(GtkRange* range);
 void ins0changed(GtkRange* range, effects_t* ins0p);
 void ins1changed(GtkRange* range, effects_t* ins1p);
-void prepIns(effects_t* ins);
+void prepEffects(effects_t* effects, FILE* fp);
 void stereoInitSelected(void);
 void monauralInitSelected(void);
 void ins0edit(GtkWidget* button, insStrip_t* ins0stripp);

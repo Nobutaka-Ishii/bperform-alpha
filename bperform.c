@@ -94,6 +94,7 @@ void createProgramListComboBox(GtkWidget* comboBox, tones* tonesp)
 
 int main(int argc, char** argv)
 {
+	FILE* fp;
 	effects_t ins0;
 	effects_t ins1;
 	insStrip_t ins0strip;
@@ -413,7 +414,9 @@ int main(int argc, char** argv)
 	ins0targetChnl = gtk_combo_box_text_new();
 	ins0type = gtk_combo_box_text_new();
 	ins0.range = ins0scale;
-	prepIns(&ins0);
+	fp = fopen("./insList.txt", "r");
+	prepEffects(&ins0, fp);
+	fclose(fp);
 		// create combobox entries of effect target channel
 	createInsTargetChnlComboBox(ins0targetChnl);
 	createInsTypeComboBox(ins0type, &ins0);
@@ -436,7 +439,9 @@ int main(int argc, char** argv)
 	ins1targetChnl = gtk_combo_box_text_new();
 	ins1type = gtk_combo_box_text_new();
 	ins1.range = ins1scale;
-	prepIns(&ins1);
+	fp = fopen("./insList.txt", "r");
+	prepEffects(&ins1, fp);
+	fclose(fp);
 
 	monoInst.checkBox = monoCheckBox;
 	monoInst.monoEnabled = 0; // poly mode in default.
