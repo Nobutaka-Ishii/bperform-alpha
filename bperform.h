@@ -25,7 +25,6 @@ struct _midiTarget{
 };
 typedef struct _midiTarget midiTarget_t;
 
-
 struct _param{
 	gchar* label;
 	gint rangeMax;
@@ -69,6 +68,11 @@ struct _portaInst {
 };
 typedef struct _portaInst portaInst_t;
 
+enum _strip_instance {
+	INS0, INS1, VAR
+};
+typedef enum _strip_instance strip_instance_t;
+
 struct _effectStrip {
 	GtkWidget* insertBox;
 	GtkWidget* insTargetChnl;
@@ -79,6 +83,7 @@ struct _effectStrip {
 	GtkWidget* editWindow;
 	GtkWidget* editWindowBox;
 	effects_t* effectInfo;
+	strip_instance_t whichstrip;
 };
 
 typedef struct _effectStrip effectStrip_t;
@@ -112,11 +117,10 @@ void prepEffects(effects_t* effects, FILE* fp);
 void stereoInitSelected(void);
 void monauralInitSelected(void);
 void varEdit(GtkWidget* button, effectStrip_t* varStripp);
-void ins0edit(GtkWidget* button, effectStrip_t* ins0stripp);
+void insEdit(GtkWidget* button, effectStrip_t* stripp);
 void targetMidiPortSelected( GtkWidget *checkMenu, midiTarget_t* midiTarget_p);
 void varTypeSelected( GtkWidget* combo, effects_t* varp);
-void ins0typeSelected( GtkWidget* combo, effects_t* ins0p);
-void ins1typeSelected( GtkWidget* combo, effects_t* ins1p);
+void effectTypeSelected( GtkWidget* combo, effectStrip_t* stripp);
 void varTargetChnlSelected( GtkWidget* combo);
 void ins0targetChnlSelected( GtkWidget* combo);
 void ins1targetChnlSelected( GtkWidget* combo);

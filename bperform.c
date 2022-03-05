@@ -204,6 +204,8 @@ int main(int argc, char** argv)
 	GtkWidget* ins1targetChnl;
 	GtkWidget* ins1label;
 	GtkWidget* ins1editButton;
+	GtkWidget* ins1editWindow;
+	GtkWidget* ins1editWindowBox;
 
 	GtkWidget* choReturnBox;
 	GtkWidget* choRetScale;
@@ -272,6 +274,7 @@ int main(int argc, char** argv)
 
 		// edit window and layouts
 	ins0editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	ins1editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	varEditWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 		// ac1 window and layouts instance generation
@@ -434,6 +437,7 @@ int main(int argc, char** argv)
 	gtk_container_add( GTK_CONTAINER(varEditWindow), varEditWindowBox);
 	varStrip.editWindow = varEditWindow;
 	varStrip.editWindowBox = varEditWindowBox; 
+	varStrip.whichstrip = VAR;
 
 	choReturnBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0); 
 	choRetLabel = gtk_label_new("Chorus");
@@ -476,8 +480,12 @@ int main(int argc, char** argv)
 	gtk_container_add( GTK_CONTAINER(ins0editWindow), ins0editWindowBox);
 	ins0strip.editWindow = ins0editWindow;
 	ins0strip.editWindowBox = ins0editWindowBox; 
+	ins0strip.whichstrip = INS0;
 
+		// insert1 strip
 	insert1box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+		// edit subwindow related to ins1 strip
+	ins1editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	ins1label = gtk_label_new("Insert2");
 	ins1editButton = gtk_button_new_with_label("Edit");
 	ins1scale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1, 127, 1);
@@ -488,16 +496,28 @@ int main(int argc, char** argv)
 	fp = fopen("./insList.txt", "r");
 	prepEffects(&ins1, fp);
 	fclose(fp);
-
+		// create 
+	createInsTargetChnlComboBox(ins1targetChnl);
+	createEffectTypeComboBox(ins1type, &ins1);
+		//ins1 object construction
+	ins1strip.insertBox = insert0box;
+	ins1strip.insLabel = ins1label;
+	ins1strip.insEditButton = ins1editButton;
+	ins1strip.insScale = ins1scale;
+	ins1strip.insTargetChnl = ins1targetChnl;
+	ins1strip.effectInfo = &ins1;
+	gtk_container_add( GTK_CONTAINER(ins1editWindow), ins1editWindowBox);
+	ins1strip.editWindow = ins1editWindow;
+	ins1strip.editWindowBox = ins1editWindowBox; 
+	ins1strip.whichstrip = INS1;
+	
+		// mono/poly function
 	monoInst.checkBox = monoCheckBox;
 	monoInst.monoEnabled = 0; // poly mode in default.
 
 	portaInst.checkBox = portaCheckBox;
 	portaInst.portaEnabled = 0;
 	portaInst.scale = portaTimeScale;
-
-	createInsTargetChnlComboBox(ins1targetChnl);
-	createEffectTypeComboBox(ins1type, &ins1);
 
 	// ac1 instance construction
 	ac1.window = ac1window;
@@ -570,22 +590,26 @@ int main(int argc, char** argv)
 
 		// insertion effect strips
 	g_signal_connect(G_OBJECT(ins0type), "changed", \
-		G_CALLBACK(ins0typeSelected), &ins0);
+		G_CALLBACK(effectTypeSelected), &ins0strip);
 	g_signal_connect(G_OBJECT(ins0scale), "value-changed", \
 		G_CALLBACK(ins0changed), &ins0);
 	g_signal_connect(G_OBJECT(ins0targetChnl), "changed", \
 		G_CALLBACK(ins0targetChnlSelected), NULL);
 	g_signal_connect(G_OBJECT(ins0editButton), "clicked", \
-		G_CALLBACK(ins0edit), &ins0strip);
+		G_CALLBACK(insEdit), &ins0strip);
 	g_signal_connect(G_OBJECT(ins0editWindow), "delete_event", \
 		G_CALLBACK(closeEditWindow), &ins0strip);
 
 	g_signal_connect(G_OBJECT(ins1type), "changed", \
-		G_CALLBACK(ins1typeSelected), &ins1);
+		G_CALLBACK(effectTypeSelected), &ins1strip);
 	g_signal_connect(G_OBJECT(ins1scale), "value-changed", \
 		G_CALLBACK(ins1changed), &ins1);
 	g_signal_connect(G_OBJECT(ins1targetChnl), "changed", \
 		G_CALLBACK(ins1targetChnlSelected), NULL);
+	g_signal_connect(G_OBJECT(ins1editButton), "clicked", \
+		G_CALLBACK(insEdit), &ins1strip);
+	g_signal_connect(G_OBJECT(ins1editWindow), "delete_event", \
+		G_CALLBACK(closeEditWindow), &ins1strip);
 
 		// ac1 window internal events
 	g_signal_connect(G_OBJECT(intensityScale), "value-changed", \
