@@ -18,27 +18,48 @@ int source; // source alsa-client id;
 int sport = 0; // app's source MIDI port number
 int tport = 0; // target client's midi port number
 
-void toggleMono(GtkWidget* checkbutton, monoInst_t* monoInst)
+void initializeSelected(GtkWidget* menu)
 {
+	GtkWidget* window;
+	GtkWidget* box;
+	GtkWidget* label;
+	GtkWidget* button;
+
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	label = gtk_label_new("Not implemented");
+	button = gtk_button_new_with_label("OK");
+
+	gtk_box_pack_start( GTK_BOX(box), label, FALSE, TRUE, 0);
+	gtk_box_pack_start( GTK_BOX(box), button , FALSE, TRUE, 0);
+	gtk_container_add( GTK_CONTAINER(window), box);
+	g_signal_connect_swapped(G_OBJECT(button), "clicked",\
+		G_CALLBACK(gtk_widget_destroy), window);
+	gtk_widget_show_all(window);
+}
+
+
+void monoCheckBoxChecked(GtkWidget* checkbutton, monoInst_t* monoInst)
+{
+	if(!monoInst->monoEnabled){
+		sendExc(4, 0x08, 0x00, 0x5, 0x00);
+	}else{
+		sendExc(4, 0x08, 0x00, 0x5, 0x01);
+	}
 	monoInst->monoEnabled = !monoInst->monoEnabled;
 }
 
-void createInsTypeComboBox(GtkWidget* comboBox, effects_t* insp)
+void createEffectTypeComboBox(GtkWidget* comboBox, effects_t* effectsp)
 {
-	GList* list = insp->effectList;
+	GList* list = effectsp->effectList;
 
 	do {
 		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox),\
-			((insEffect*)(list->data))->name);
+			((eachEffect_t*)(list->data))->name);
 		list = list->next;
 	} while( list );
 
 }
-
-void createVarTypeComboBox(GtkWidget* comboBox, effects_t* varp)
-{
-}
-
 
 gchar* chnlInsComboBoxEntries[] = {"Off", "1", "2", "3", "4", "AD"};
 gchar* chnlVarComboBoxEntries[] = {"Off", "1", "2", "3", "4", "AD", "System"};
@@ -95,10 +116,12 @@ void createProgramListComboBox(GtkWidget* comboBox, tones* tonesp)
 int main(int argc, char** argv)
 {
 	FILE* fp;
+	effects_t var;
 	effects_t ins0;
 	effects_t ins1;
-	insStrip_t ins0strip;
-	insStrip_t ins1strip;
+	effectStrip_t varStrip;
+	effectStrip_t ins0strip;
+	effectStrip_t ins1strip;
 	tones tones;
 	ac1_t ac1;
 	GList* midiTargets = NULL;
@@ -158,10 +181,13 @@ int main(int argc, char** argv)
 
 	// system effect entries
 	GtkWidget* variationBox;
-	GtkWidget* varTarget;
+	GtkWidget* varTargetChnl;
+	GtkWidget* varType;
 	GtkWidget* varScale;
 	GtkWidget* varLabel;
-	GtkWidget* varEdit;
+	GtkWidget* varEditButton;
+	GtkWidget* varEditWindow;
+	GtkWidget* varEditWindowBox;
 
 	GtkWidget* insert0box;
 	GtkWidget* ins0type;
@@ -236,6 +262,7 @@ int main(int argc, char** argv)
 	gtk_init(&argc, &argv);
 
 		// preparation for using glib list methods.
+	var.effectList = NULL;
 	ins0.effectList = NULL;
 	ins1.effectList = NULL;
 
@@ -245,6 +272,7 @@ int main(int argc, char** argv)
 
 		// edit window and layouts
 	ins0editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	varEditWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 		// ac1 window and layouts instance generation
 	memset(&ac1, 0, sizeof(ac1_t));
@@ -374,9 +402,6 @@ int main(int argc, char** argv)
 	page0right = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	createProgramListComboBox( pListComboBox, &tones);
 
-	varTarget = gtk_combo_box_text_new();
-	createVarTargetComboBox(varTarget);
-
 	revSendBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	revSendLabel = gtk_label_new("Reverb");
 	revSendScale= gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
@@ -385,10 +410,30 @@ int main(int argc, char** argv)
 	choSendLabel = gtk_label_new("Chorus");
 	choSendScale= gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
 
+		// variation strip
 	variationBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	varEditWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	varLabel = gtk_label_new("Variation");
-	varEdit = gtk_button_new_with_label("Edit");
+	varEditButton = gtk_button_new_with_label("Edit");
 	varScale= gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
+	varTargetChnl = gtk_combo_box_text_new();
+	varType = gtk_combo_box_text_new();
+	var.range = varScale;
+	fp = fopen("./varList.txt", "r");
+	prepEffects(&var, fp);
+	fclose(fp);
+	createVarTargetComboBox(varTargetChnl);
+	createEffectTypeComboBox(varType, &var);
+		// var object construction
+	varStrip.insertBox = variationBox;
+	varStrip.insLabel = varLabel;
+	varStrip.insEditButton = varEditButton;
+	varStrip.insScale = varScale;
+	varStrip.insTargetChnl = varTargetChnl;
+	varStrip.effectInfo = &var;
+	gtk_container_add( GTK_CONTAINER(varEditWindow), varEditWindowBox);
+	varStrip.editWindow = varEditWindow;
+	varStrip.editWindowBox = varEditWindowBox; 
 
 	choReturnBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0); 
 	choRetLabel = gtk_label_new("Chorus");
@@ -404,6 +449,7 @@ int main(int argc, char** argv)
 	revBlankBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_widget_set_size_request(revBlankBox, -1, 72); // width, height
 
+		// insert0 strip
 	insert0box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 		// edit subwindow related to ins0 strip
 	ins0editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -419,7 +465,7 @@ int main(int argc, char** argv)
 	fclose(fp);
 		// create combobox entries of effect target channel
 	createInsTargetChnlComboBox(ins0targetChnl);
-	createInsTypeComboBox(ins0type, &ins0);
+	createEffectTypeComboBox(ins0type, &ins0);
 		// ins0 object construction
 	ins0strip.insertBox = insert0box;
 	ins0strip.insLabel = ins0label;
@@ -451,7 +497,7 @@ int main(int argc, char** argv)
 	portaInst.scale = portaTimeScale;
 
 	createInsTargetChnlComboBox(ins1targetChnl);
-	createInsTypeComboBox(ins1type, &ins1);
+	createEffectTypeComboBox(ins1type, &ins1);
 
 	// ac1 instance construction
 	ac1.window = ac1window;
@@ -488,6 +534,8 @@ int main(int argc, char** argv)
 		G_CALLBACK(destroy), NULL);
 
 		// menu selection
+	g_signal_connect(G_OBJECT(initialize), "activate",\
+		G_CALLBACK(initializeSelected), NULL);
 	g_signal_connect(G_OBJECT(monauralInit), "activate",\
 		G_CALLBACK(monauralInitSelected), NULL);
 	g_signal_connect(G_OBJECT(stereoInit), "activate",\
@@ -508,6 +556,18 @@ int main(int argc, char** argv)
 	g_signal_connect(G_OBJECT(releaseScale), "value-changed", \
 		G_CALLBACK(releaseChanged), NULL);
 
+		// variation effect strip
+	g_signal_connect(G_OBJECT(varType), "changed", \
+		G_CALLBACK(varTypeSelected), &var);
+	g_signal_connect(G_OBJECT(varScale), "value-changed", \
+		G_CALLBACK(varChanged), &var);
+	g_signal_connect(G_OBJECT(varTargetChnl), "changed", \
+		G_CALLBACK(varTargetChnlSelected), NULL);
+	g_signal_connect(G_OBJECT(varEditButton), "clicked", \
+		G_CALLBACK(varEdit), &varStrip);
+	g_signal_connect(G_OBJECT(varEditWindow), "delete_event", \
+		G_CALLBACK(closeEditWindow), &varStrip);
+
 		// insertion effect strips
 	g_signal_connect(G_OBJECT(ins0type), "changed", \
 		G_CALLBACK(ins0typeSelected), &ins0);
@@ -519,7 +579,6 @@ int main(int argc, char** argv)
 		G_CALLBACK(ins0edit), &ins0strip);
 	g_signal_connect(G_OBJECT(ins0editWindow), "delete_event", \
 		G_CALLBACK(closeEditWindow), &ins0strip);
-
 
 	g_signal_connect(G_OBJECT(ins1type), "changed", \
 		G_CALLBACK(ins1typeSelected), &ins1);
@@ -555,7 +614,7 @@ int main(int argc, char** argv)
 	g_signal_connect(G_OBJECT(portaCheckBox), "clicked",\
 		 G_CALLBACK(portaCheckBoxChecked), &portaInst);
 	g_signal_connect(G_OBJECT(monoCheckBox), "clicked",\
-		G_CALLBACK(toggleMono), &monoInst);
+		G_CALLBACK(monoCheckBoxChecked), &monoInst);
 
 	// widgets boxing
 
@@ -590,9 +649,10 @@ int main(int argc, char** argv)
 	gtk_box_pack_start( GTK_BOX(revSendBox), revSendScale, TRUE, TRUE, 0);
 
 	gtk_box_pack_start( GTK_BOX(variationBox), varLabel, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(variationBox), varTarget, FALSE, TRUE, 0);
+	gtk_box_pack_start( GTK_BOX(variationBox), varTargetChnl, FALSE, TRUE, 0);
+	gtk_box_pack_start( GTK_BOX(variationBox), varType, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(variationBox), varScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(variationBox), varEdit, FALSE, TRUE, 0);
+	gtk_box_pack_start( GTK_BOX(variationBox), varEditButton, FALSE, TRUE, 0);
 
 	gtk_box_pack_start( GTK_BOX(insert0box), ins0label, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(insert0box), ins0targetChnl, FALSE, TRUE, 0);

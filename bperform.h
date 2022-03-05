@@ -34,7 +34,7 @@ struct _param{
 
 typedef struct _param param;
 
-struct _insEffect {
+struct _eachEffect {
 	gchar* name;
 	guint msb;
 	guint lsb;
@@ -42,7 +42,7 @@ struct _insEffect {
 	param param[16]; // MU100B's each effects has max 16 parameters.
 };
 
-typedef struct _insEffect insEffect;
+typedef struct _eachEffect eachEffect_t;
 
 struct _effects {
 	GtkWidget* range; // used for slider range changing operation.
@@ -69,7 +69,7 @@ struct _portaInst {
 };
 typedef struct _portaInst portaInst_t;
 
-struct _insStrip {
+struct _effectStrip {
 	GtkWidget* insertBox;
 	GtkWidget* insTargetChnl;
 	GtkWidget* insType;
@@ -81,7 +81,7 @@ struct _insStrip {
 	effects_t* effectInfo;
 };
 
-typedef struct _insStrip insStrip_t;
+typedef struct _effectStrip effectStrip_t;
 
 struct _ac1 {
 	GtkWidget* window;
@@ -105,15 +105,19 @@ void choSend(GtkRange* range);
 void attackChanged(GtkRange* range);
 void releaseChanged(GtkRange* range);
 void decayChanged(GtkRange* range);
+void varChanged(GtkRange* range, effects_t* varp);
 void ins0changed(GtkRange* range, effects_t* ins0p);
 void ins1changed(GtkRange* range, effects_t* ins1p);
 void prepEffects(effects_t* effects, FILE* fp);
 void stereoInitSelected(void);
 void monauralInitSelected(void);
-void ins0edit(GtkWidget* button, insStrip_t* ins0stripp);
+void varEdit(GtkWidget* button, effectStrip_t* varStripp);
+void ins0edit(GtkWidget* button, effectStrip_t* ins0stripp);
 void targetMidiPortSelected( GtkWidget *checkMenu, midiTarget_t* midiTarget_p);
+void varTypeSelected( GtkWidget* combo, effects_t* varp);
 void ins0typeSelected( GtkWidget* combo, effects_t* ins0p);
 void ins1typeSelected( GtkWidget* combo, effects_t* ins1p);
+void varTargetChnlSelected( GtkWidget* combo);
 void ins0targetChnlSelected( GtkWidget* combo);
 void ins1targetChnlSelected( GtkWidget* combo);
 void monoCheckBoxChecked(GtkWidget* checkbutton, monoInst_t* monoInst);
@@ -125,8 +129,7 @@ gboolean delete_event (void);
 gboolean quit_button_pushed (GtkWidget* widget, GdkEvent *event, gpointer data);
 void destroy(void);
 void reverbsend( GtkRange* range, GdkEvent* event, gpointer data);
-void closeEditWindow(GtkWidget* window, insStrip_t* insStripp);
-void toggleMono(GtkWidget* checkbutton, monoInst_t* monoInst);
+void closeEditWindow(GtkWidget* window, effectStrip_t* effectStripp);
 void ac1intensityChanged(GtkWidget* scale, ac1_t* ac1p);
 void ac1ccChanged(GtkWidget* spinbutton, ac1_t* ac1p);
 void ac1okButtonClicked(GtkWidget* button, ac1_t* ac1p);

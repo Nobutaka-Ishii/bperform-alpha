@@ -30,8 +30,22 @@ void pgmChange(int pn);
 void sendExc(guint length,...);
 void sendCc(guint cc, guint val);
 void init_synth(void);
+void varChanged(GtkRange* range, effects_t* varp);
 void ins0changed(GtkRange* range, effects_t* ins0p);
 void ins1changed(GtkRange* range, effects_t* ins1p);
+
+void varChanged(GtkRange* range, effects_t* varp)
+{
+	GList* list = varp->effectList;
+	guint val = gtk_range_get_value(range);
+
+	do{
+		if( !strcmp(varp->currentInsType, ((eachEffect_t*)(list->data))->name ) ) break;
+		list = list->next;
+	}while( list );
+
+	sendExc(5, 0x02, 0x01, 0x54, 0x00, val);
+}
 
 void ins0changed(GtkRange* range, effects_t* ins0p)
 {
@@ -39,11 +53,11 @@ void ins0changed(GtkRange* range, effects_t* ins0p)
 	guint val = gtk_range_get_value(range);
 
 	do{
-		if( !strcmp(ins0p->currentInsType, ((insEffect*)(list->data))->name ) ) break;
+		if( !strcmp(ins0p->currentInsType, ((eachEffect_t*)(list->data))->name ) ) break;
 		list = list->next;
 	}while( list );
 
-	if( ((insEffect*)list->data)->addrWidth == 2 ){ 
+	if( ((eachEffect_t*)list->data)->addrWidth == 2 ){ 
 		// this type of effect need 2-bytes width prameter specification.
 		sendExc(5, 0x03, 0x00, 0x42, 0x00, val);
 	}else{
@@ -57,11 +71,11 @@ void ins1changed(GtkRange* range, effects_t* ins1p)
 	guint val = gtk_range_get_value(range);
 
 	do{
-		if( !strcmp(ins1p->currentInsType, ((insEffect*)(list->data))->name ) ) break;
+		if( !strcmp(ins1p->currentInsType, ((eachEffect_t*)(list->data))->name ) ) break;
 		list = list->next;
 	}while( list );
 
-	if( ((insEffect*)list->data)->addrWidth == 2 ){ 
+	if( ((eachEffect_t*)list->data)->addrWidth == 2 ){ 
 		// this type of effect need 2-bytes width prameter specification.
 		sendExc(5, 0x03, 0x01, 0x42, 0x00, val);
 	}else{

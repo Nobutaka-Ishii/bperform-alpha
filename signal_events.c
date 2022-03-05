@@ -37,7 +37,18 @@ void ac1menuSelected(GtkWidget* menuButton, ac1_t* ac1p){
 	gtk_widget_show_all(ac1p->window);
 }
 
-void ins0edit(GtkWidget* button, insStrip_t* ins0stripp)
+void varEdit(GtkWidget* button, effectStrip_t* varStripp)
+{
+	GtkWidget* paramLabel;
+
+	paramLabel = gtk_label_new(varStripp->effectInfo->currentInsType);
+	gtk_box_pack_start( GTK_BOX(varStripp->editWindowBox), paramLabel, TRUE, 0, 0);
+	gtk_window_set_default_size(GTK_WINDOW(varStripp->editWindow), 200, 400);
+	//gtk_widget_set_sensitive(varStripp->insEditButton, FALSE);
+	gtk_widget_show_all(varStripp->editWindow);
+}
+
+void ins0edit(GtkWidget* button, effectStrip_t* ins0stripp)
 {
 	GtkWidget* paramLabel;
 
@@ -59,6 +70,32 @@ void targetMidiPortSelected( GtkWidget *label, midiTarget_t* midiTarget_p){
 	}
 }
 
+void varTypeSelected( GtkWidget* combo, effects_t* varp)
+{
+	gchar *eName; // selected effect name from the combo box entries.
+	GList* list = varp->effectList;
+
+	eName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
+
+	while( list ){
+		if( !strcmp(eName, ((eachEffect_t*)(list->data))->name ) ) break;
+		list = list->next;
+	} 
+	strcpy(varp->currentInsType, ((eachEffect_t*)(list->data))->name);
+
+	if( strcmp("null", ((eachEffect_t*)list->data)->param[9].label) ){
+		gtk_widget_set_sensitive(varp->range, TRUE);
+		gtk_range_set_range(GTK_RANGE(varp->range),
+			((eachEffect_t*)list->data)->param[9].rangeMin,
+			((eachEffect_t*)list->data)->param[9].rangeMax);
+		sendExc(5 , 0x02, 0x01, 0x40, ((eachEffect_t*)list->data)->msb,\
+			((eachEffect_t*)list->data)->lsb);
+	} else {
+		gtk_widget_set_sensitive(varp->range, FALSE);
+		gtk_range_set_range(GTK_RANGE(varp->range), 0, 0);
+	}
+}
+
 void ins0typeSelected( GtkWidget* combo, effects_t* ins0p)
 {
 	gchar *eName; // selected effect name from the combo box entries.
@@ -66,15 +103,23 @@ void ins0typeSelected( GtkWidget* combo, effects_t* ins0p)
 
 	eName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
 
-	do {
-		if( !strcmp(eName, ((insEffect*)(list->data))->name ) ) break;
+	while( list ){
+		if( !strcmp(eName, ((eachEffect_t*)(list->data))->name ) ) break;
 		list = list->next;
-	} while( list );
+	} 
+	strcpy(ins0p->currentInsType, ((eachEffect_t*)(list->data))->name);
 
-	strcpy(ins0p->currentInsType, ((insEffect*)list->data)->name);
-	sendExc(5 , 0x03, 0x00, 0x00, ((insEffect*)list->data)->msb, ((insEffect*)list->data)->lsb);
-	gtk_range_set_range(GTK_RANGE(ins0p->range), ((insEffect*)list->data)->param[10].rangeMin,\
-		((insEffect*)list->data)->param[10].rangeMax);
+	if( strcmp("null", ((eachEffect_t*)list->data)->param[9].label) ){
+		gtk_widget_set_sensitive(ins0p->range, TRUE);
+		gtk_range_set_range(GTK_RANGE(ins0p->range),
+			((eachEffect_t*)list->data)->param[9].rangeMin,
+			((eachEffect_t*)list->data)->param[9].rangeMax);
+		sendExc(5 , 0x03, 0x00, 0x00, ((eachEffect_t*)list->data)->msb,\
+			((eachEffect_t*)list->data)->lsb);
+	} else {
+		gtk_widget_set_sensitive(ins0p->range, FALSE);
+		gtk_range_set_range(GTK_RANGE(ins0p->range), 0, 0);
+	}
 }
 
 void ins1typeSelected( GtkWidget* combo, effects_t* ins1p)
@@ -85,14 +130,41 @@ void ins1typeSelected( GtkWidget* combo, effects_t* ins1p)
 	eName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
 
 	do {
-		if( !strcmp(eName, ((insEffect*)(list->data))->name ) ) break;
+		if( !strcmp(eName, ((eachEffect_t*)(list->data))->name ) ) break;
 		list = list->next;
 	} while( list );
 
-	strcpy(ins1p->currentInsType, ((insEffect*)list->data)->name);
-	sendExc(5 , 0x03, 0x01, 0x00, ((insEffect*)list->data)->msb, ((insEffect*)list->data)->lsb);
-	gtk_range_set_range(GTK_RANGE(ins1p->range), ((insEffect*)list->data)->param[10].rangeMin,\
-		((insEffect*)list->data)->param[10].rangeMax);
+	strcpy(ins1p->currentInsType, ((eachEffect_t*)list->data)->name);
+	sendExc(5 , 0x03, 0x01, 0x00, ((eachEffect_t*)list->data)->msb, ((eachEffect_t*)list->data)->lsb);
+	gtk_range_set_range(GTK_RANGE(ins1p->range), ((eachEffect_t*)list->data)->param[10].rangeMin,\
+		((eachEffect_t*)list->data)->param[10].rangeMax);
+}
+
+void varTargetChnlSelected( GtkWidget* combo)
+{
+	gchar *chnl;
+	chnl = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
+
+	if (!strcmp(chnl, "System" ) ){
+		sendExc(4 , 0x02, 0x01, 0x5a, 0x1); // system
+		sendExc(4 , 0x02, 0x01, 0x5b, 0x40);
+	} else {
+		sendExc(4 , 0x02, 0x01, 0x5a, 0x0); // insertion
+
+		if (!strcmp(chnl, "Off" ) ){
+			sendExc(4 , 0x02, 0x01, 0x5b, 0x7f);
+		} else if (!strcmp(chnl, "1" ) ){
+			sendExc(4 , 0x02, 0x01, 0x5b, 0x0);
+		} else if (!strcmp(chnl, "2" ) ){
+			sendExc(4 , 0x02, 0x01, 0x5b, 0x1);
+		} else if (!strcmp(chnl, "3" ) ){
+			sendExc(4 , 0x02, 0x01, 0x5b, 0x2);
+		} else if (!strcmp(chnl, "4" ) ){
+			sendExc(4 , 0x02, 0x01, 0x5b, 0x3);
+		} else if (!strcmp(chnl, "AD" ) ){
+			sendExc(4 , 0x02, 0x01, 0x5b, 0x40);
+		}
+	}
 }
 
 void ins0targetChnlSelected( GtkWidget* combo)
@@ -144,17 +216,6 @@ void portaCheckBoxChecked(GtkWidget* checkbutton, portaInst_t* portaInst)
 	}
 
 	portaInst->portaEnabled = !portaInst->portaEnabled;
-}
-
-void monoCheckBoxChecked(GtkWidget* checkbutton, monoInst_t* monoInst)
-{
-	if(!monoInst->monoEnabled){
-		sendExc(4, 0x08, 0x00, 0x5, 0x00);
-	}else{
-		sendExc(4, 0x08, 0x00, 0x5, 0x01);
-	}
-
-	monoInst->monoEnabled = !monoInst->monoEnabled;
 }
 
 void portaTimeChanged(GtkWidget* scale)
@@ -214,9 +275,9 @@ void reverbsend( GtkRange *range, GdkEvent *event, gpointer data)
     //g_print("%d\n", val);
 }
 
-void closeEditWindow(GtkWidget* window, insStrip_t* insStripp)
+void closeEditWindow(GtkWidget* window, effectStrip_t* effectStripp)
 {
-	//gtk_widget_set_sensitive(insStripp->insEditButton, FALSE);
+	//gtk_widget_set_sensitive(effectStripp->insEditButton, FALSE);
 	gtk_widget_hide(window);
 }
 

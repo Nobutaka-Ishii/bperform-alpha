@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#define LENGTH 256
+#define LENGTH 1024
 
 char** splitline(char* original, char delim, int* fields)
 {
