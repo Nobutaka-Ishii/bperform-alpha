@@ -631,6 +631,8 @@ int main(int argc, char** argv)
 	}
 
 		// voice page
+	g_signal_connect(volScale, "value-changed",\
+		G_CALLBACK(volChanged), NULL);
 	g_signal_connect(revSendScale, "value-changed",\
 		G_CALLBACK(revSend), NULL);
 	g_signal_connect(choSendScale, "value-changed",\

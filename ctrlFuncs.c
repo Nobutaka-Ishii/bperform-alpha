@@ -83,6 +83,13 @@ void ins1changed(GtkRange* range, effects_t* ins1p)
 	}
 }
 
+void volChanged(GtkRange* range)
+{
+		guint val = gtk_range_get_value(range);
+		sendCc(7, val);
+}
+
+
 void revSend(GtkRange* range)
 {
 		guint val = gtk_range_get_value(range);

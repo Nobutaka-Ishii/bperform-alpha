@@ -97,6 +97,7 @@ struct _ac1 {
 	guint	tmpCc;
 	gint	intensity;
 	gint	tmpIntensity;
+	//void (*ac1constr)(struct _ac1_t* ac1);
 };
 
 typedef struct _ac1 ac1_t;
@@ -107,6 +108,7 @@ void sendCc(guint cc, guint val);
 void init_synth(void);
 void revSend(GtkRange* range);
 void choSend(GtkRange* range);
+void volChanged(GtkRange* range);
 void attackChanged(GtkRange* range);
 void releaseChanged(GtkRange* range);
 void decayChanged(GtkRange* range);
