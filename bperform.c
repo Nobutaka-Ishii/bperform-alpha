@@ -20,22 +20,8 @@ int tport = 0; // target client's midi port number
 
 void initializeSelected(GtkWidget* menu)
 {
-	GtkWidget* window;
-	GtkWidget* box;
-	GtkWidget* label;
-	GtkWidget* button;
-
-	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	label = gtk_label_new("Not implemented");
-	button = gtk_button_new_with_label("OK");
-
-	gtk_box_pack_start( GTK_BOX(box), label, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(box), button , FALSE, TRUE, 0);
-	gtk_container_add( GTK_CONTAINER(window), box);
-	g_signal_connect_swapped(G_OBJECT(button), "clicked",\
-		G_CALLBACK(gtk_widget_destroy), window);
-	gtk_widget_show_all(window);
+	// XG reset
+	sendExc(4, 0x4c, 0x00, 0x7f, 0x00);
 }
 
 
