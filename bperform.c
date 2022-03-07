@@ -108,8 +108,8 @@ int main(int argc, char** argv)
 	effectStrip_t varStrip;
 	effectStrip_t ins0strip;
 	effectStrip_t ins1strip;
-	tones tones;
 	ac1_t* ac1p;
+	voicePage_t* voicePage0p;
 	GList* midiTargets = NULL;
 
 		// variables for alsa connection destination port
@@ -131,41 +131,41 @@ int main(int argc, char** argv)
 
 	GtkWidget* voicePages;
 
+
 	// page0 entries
-	GtkWidget* voicePage0;
-	GtkWidget* page0contents;
-	GtkWidget* page0left;
-	GtkWidget* page0right;
-	GtkWidget* portaCheckBox;
-	GtkWidget* portaTimeScale;
-	GtkWidget* monoCheckBox;
-	GtkWidget* volBox;
-	GtkWidget* volLabel;
-	GtkWidget* volScale;
-	GtkWidget* panBox;
-	GtkWidget* panLabel;
-	GtkWidget* panScale;
-	GtkWidget* attackBox;
-	GtkWidget* attackLabel;
-	GtkWidget* attackScale;
-	GtkWidget* decayBox;
-	GtkWidget* decayLabel;
-	GtkWidget* decayScale;
-	GtkWidget* releaseBox;
-	GtkWidget* releaseLabel;
-	GtkWidget* releaseScale;
-	GtkWidget* revSendBox;
-	GtkWidget* revSendScale;
-	GtkWidget* revSendLabel;
-	GtkWidget* choSendBox;
-	GtkWidget* choSendScale;
-	GtkWidget* choSendLabel;
+//	GtkWidget* voicePage0;
+//	GtkWidget* page0contents;
+//	GtkWidget* page0left;
+//	GtkWidget* page0right;
+//	GtkWidget* portaCheckBox;
+//	GtkWidget* portaTimeScale;
+//	GtkWidget* monoCheckBox;
+//	GtkWidget* volBox;
+//	GtkWidget* volLabel;
+//	GtkWidget* volScale;
+//	GtkWidget* panBox;
+//	GtkWidget* panLabel;
+//	GtkWidget* panScale;
+//	GtkWidget* attackBox;
+//	GtkWidget* attackLabel;
+//	GtkWidget* attackScale;
+//	GtkWidget* decayBox;
+//	GtkWidget* decayLabel;
+//	GtkWidget* decayScale;
+//	GtkWidget* releaseBox;
+//	GtkWidget* releaseLabel;
+//	GtkWidget* releaseScale;
+//	GtkWidget* revSendBox;
+//	GtkWidget* revSendScale;
+//	GtkWidget* revSendLabel;
+//	GtkWidget* choSendBox;
+//	GtkWidget* choSendScale;
+//	GtkWidget* choSendLabel;
 
 	// page1 entries
 	GtkWidget* voicePage1;
-	GtkWidget* page1contents;
+	//GtkWidget* page1contents;
 
-	GtkWidget* pListComboBox;
 
 	// system effect entries
 	GtkWidget* variationBox;
@@ -218,8 +218,8 @@ int main(int argc, char** argv)
 	GtkWidget* monauralInit;
 	GtkWidget* stereoInit; 
 
-	monoInst_t monoInst;
-	portaInst_t portaInst;
+//	monoInst_t monoInst;
+//	portaInst_t portaInst;
 
 	source = snd_seq_open( &handle, "default", SND_SEQ_OPEN_DUPLEX, 0 );
 	if( source < 0 ){
@@ -257,6 +257,7 @@ int main(int argc, char** argv)
 
 		// ac1 window and layouts instance generation
 	ac1p = (ac1_t*)(ac1constr)();
+	voicePage0p = (voicePage_t*)(voicePageConstr)();
 
 
 	// create menubar bar
@@ -335,12 +336,12 @@ int main(int argc, char** argv)
 	// create area other than menubar bar
 	exceptMenu = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 
-	voicePage0 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	//voicePage0 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	voicePage1 = gtk_button_new_with_label("hoge");
 
 	voicePages = gtk_notebook_new();
 	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
-		voicePage0, GTK_WIDGET(gtk_label_new("Voice0") ) );
+		voicePage0p->voicePage , GTK_WIDGET(gtk_label_new("Voice0") ) );
 	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
 		voicePage1, GTK_WIDGET(gtk_label_new("Voice1") ) );
 
@@ -351,10 +352,10 @@ int main(int argc, char** argv)
 		voiceBox, GTK_WIDGET(gtk_label_new("Voice3") ) );
 */
 
+/*
 	portaCheckBox = gtk_check_button_new_with_label("Portament");
 	portaTimeScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
 	monoCheckBox = gtk_check_button_new_with_label("Mono");
-	pListComboBox = gtk_combo_box_text_new();
 	volBox =  gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	volLabel = gtk_label_new("V");
 	volScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
@@ -382,6 +383,7 @@ int main(int argc, char** argv)
 	choSendBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	choSendLabel = gtk_label_new("Chorus");
 	choSendScale= gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
+*/
 
 		// variation strip
 	variationBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -482,28 +484,26 @@ int main(int argc, char** argv)
 	ins1strip.whichstrip = INS1;
 	
 		// mono/poly function
+/*
 	monoInst.checkBox = monoCheckBox;
 	monoInst.monoEnabled = 0; // poly mode in default.
 
 	portaInst.checkBox = portaCheckBox;
 	portaInst.portaEnabled = 0;
 	portaInst.scale = portaTimeScale;
+*/
 
-	//
-	gtk_scale_set_value_pos(GTK_SCALE(choSendScale), GTK_POS_BOTTOM);
-	gtk_range_set_inverted(GTK_RANGE(choSendScale), TRUE);
-	gtk_scale_set_value_pos(GTK_SCALE(revSendScale), GTK_POS_BOTTOM);
-	gtk_range_set_inverted(GTK_RANGE(revSendScale), TRUE);
-	gtk_scale_set_value_pos(GTK_SCALE(varScale), GTK_POS_BOTTOM);
-	gtk_range_set_inverted(GTK_RANGE(varScale), TRUE);
-	gtk_scale_set_value_pos(GTK_SCALE(ins0scale), GTK_POS_BOTTOM);
-	gtk_range_set_inverted(GTK_RANGE(ins0scale), TRUE);
-	gtk_scale_set_value_pos(GTK_SCALE(ins1scale), GTK_POS_BOTTOM);
-	gtk_range_set_inverted(GTK_RANGE(ins1scale), TRUE);
-	gtk_scale_set_value_pos(GTK_SCALE(choRetScale), GTK_POS_BOTTOM);
-	gtk_range_set_inverted(GTK_RANGE(choRetScale), TRUE);
-	gtk_scale_set_value_pos(GTK_SCALE(revReturnScale), GTK_POS_BOTTOM);
-	gtk_range_set_inverted(GTK_RANGE(revReturnScale), TRUE);
+    gtk_scale_set_value_pos(GTK_SCALE(varScale), GTK_POS_BOTTOM);
+    gtk_range_set_inverted(GTK_RANGE(varScale), TRUE);
+    gtk_scale_set_value_pos(GTK_SCALE(ins0scale), GTK_POS_BOTTOM);
+    gtk_range_set_inverted(GTK_RANGE(ins0scale), TRUE);
+    gtk_scale_set_value_pos(GTK_SCALE(ins1scale), GTK_POS_BOTTOM);
+    gtk_range_set_inverted(GTK_RANGE(ins1scale), TRUE);
+    gtk_scale_set_value_pos(GTK_SCALE(choRetScale), GTK_POS_BOTTOM);
+    gtk_range_set_inverted(GTK_RANGE(choRetScale), TRUE);
+    gtk_scale_set_value_pos(GTK_SCALE(revReturnScale), GTK_POS_BOTTOM);
+    gtk_range_set_inverted(GTK_RANGE(revReturnScale), TRUE);
+
 
 	// callback function settings
 
@@ -524,19 +524,6 @@ int main(int argc, char** argv)
 		G_CALLBACK(stereoInitSelected), NULL);
 	g_signal_connect(G_OBJECT(quit), "activate",\
 		G_CALLBACK(quit_button_pushed), NULL);
-
-
-		// combobox program select
-	g_signal_connect(G_OBJECT(pListComboBox), "changed", \
-		G_CALLBACK(programSelected), tones.toneEntries);
-	g_signal_connect(G_OBJECT(portaTimeScale), "value-changed", \
-		G_CALLBACK(portaTimeChanged), NULL);
-	g_signal_connect(G_OBJECT(attackScale), "value-changed", \
-		G_CALLBACK(attackChanged), NULL);
-	g_signal_connect(G_OBJECT(decayScale), "value-changed", \
-		G_CALLBACK(decayChanged), NULL);
-	g_signal_connect(G_OBJECT(releaseScale), "value-changed", \
-		G_CALLBACK(releaseChanged), NULL);
 
 		// variation effect strip
 	g_signal_connect(G_OBJECT(varType), "changed", \
@@ -582,20 +569,9 @@ int main(int argc, char** argv)
 		midiTargets = midiTargets->next;
 	}
 
-		// voice page
-	g_signal_connect(volScale, "value-changed",\
-		G_CALLBACK(volChanged), NULL);
-	g_signal_connect(revSendScale, "value-changed",\
-		G_CALLBACK(revSend), NULL);
-	g_signal_connect(choSendScale, "value-changed",\
-		G_CALLBACK(choSend), NULL);
-	g_signal_connect(G_OBJECT(portaCheckBox), "clicked",\
-		 G_CALLBACK(portaCheckBoxChecked), &portaInst);
-	g_signal_connect(G_OBJECT(monoCheckBox), "clicked",\
-		G_CALLBACK(monoCheckBoxChecked), &monoInst);
 
 	// widgets boxing
-
+/*
 	gtk_box_pack_start( GTK_BOX(page0left), pListComboBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(page0left), volBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(page0left), panBox, FALSE, TRUE, 0);
@@ -619,18 +595,22 @@ int main(int argc, char** argv)
 	gtk_box_pack_start( GTK_BOX(page0right), revSendBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(page0contents), page0left, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(page0contents), page0right, FALSE, TRUE, 0);
-	gtk_container_add(GTK_CONTAINER(voicePage0), page0contents);
-
 	gtk_box_pack_start( GTK_BOX(choSendBox), choSendLabel, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(choSendBox), choSendScale, TRUE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(revSendBox), revSendLabel, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(revSendBox), revSendScale, TRUE, TRUE, 0);
+
+	gtk_container_add(GTK_CONTAINER(voicePage0), page0contents);
+*/
+
+
 
 	gtk_box_pack_start( GTK_BOX(variationBox), varLabel, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(variationBox), varTargetChnl, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(variationBox), varType, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(variationBox), varScale, TRUE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(variationBox), varEditButton, FALSE, TRUE, 0);
+
 
 	gtk_box_pack_start( GTK_BOX(insert0box), ins0label, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(insert0box), ins0targetChnl, FALSE, TRUE, 0);

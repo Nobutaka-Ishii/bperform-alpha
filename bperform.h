@@ -1,5 +1,6 @@
 #include <gtk/gtk.h>
 #include <ac1.h>
+#include <voicePage.h>
 #define PORTACCNUM 65
 
 struct _toneEntry {
@@ -51,23 +52,6 @@ struct _effects {
 };
 
 typedef struct _effects effects_t;
-
-struct _monoInst {
-	GtkWidget* checkBox;
-	int monoEnabled; // 0:poly, 1:mono
-	void (*toggleMono)(struct _monoInst* monoInst);
-};
-typedef struct _monoInst monoInst_t;
-
-struct _portaInst {
-	GtkWidget* checkBox;
-	GtkWidget* label;
-	GtkWidget* scale;
-	guint portaEnabled;
-	guint value;
-	guint (*getPortaDuration)(struct _portaInst* portaInst);
-};
-typedef struct _portaInst portaInst_t;
 
 enum _strip_instance {
 	INS0, INS1, VAR
@@ -123,5 +107,4 @@ void destroy(void);
 void reverbsend( GtkRange* range, GdkEvent* event, gpointer data);
 void closeEditWindow(GtkWidget* window, effectStrip_t* effectStripp);
 char** splitline(char* original, char delim, int* fields);
-ac1_t* ac1constr(void);
 
