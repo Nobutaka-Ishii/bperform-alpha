@@ -35,7 +35,7 @@ voicePage_t* voicePageConstr(void)
 	GtkWidget* choSendBox;
 	GtkWidget* choSendScale;
 	GtkWidget* choSendLabel;
-	GtkWidget* pListComboBox;
+	GtkWidget* prgListComboBox;
 	//portaInst_t* portaInst;
 	//monoInst_t* monoInst;
 
@@ -47,7 +47,7 @@ voicePage_t* voicePageConstr(void)
 	portaCheckBox = gtk_check_button_new_with_label("Portament");
 	portaTimeScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
 	monoCheckBox = gtk_check_button_new_with_label("Mono");
-	pListComboBox = gtk_combo_box_text_new();
+	prgListComboBox = gtk_combo_box_text_new();
 	volBox =  gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	volLabel = gtk_label_new("V");
 	volScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
@@ -65,7 +65,7 @@ voicePage_t* voicePageConstr(void)
 	releaseScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
 	pageLeft = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	pageRight = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	//createProgramListComboBox( pListComboBox, &tones);							 
+	//createProgramListComboBox( prgListComboBox, &tones);							 
 	revSendBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	revSendLabel = gtk_label_new("Reverb");
 	revSendScale= gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
@@ -79,13 +79,19 @@ voicePage_t* voicePageConstr(void)
 		fclose(fp);
 	}
 	
+	toneEntries = g_list_first(toneEntries);
+	while( toneEntries->next ){
+		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(prgListComboBox),\
+			((eachTone_t*)(toneEntries->data))->name );
+		toneEntries = toneEntries->next;
+	}
 
 	vpp->voicePage = voicePage;
 	vpp->pageContents = pageContents;
 	vpp->portaCheckBox = portaCheckBox;
 	vpp->portaTimeScale = portaTimeScale;
 	vpp->monoCheckBox = monoCheckBox;
-	//vpp->pListComboBox = pListComboBox;
+	vpp->prgListComboBox = prgListComboBox;
 	vpp->volBox = volBox;
 	vpp->volLabel = volLabel;
 	vpp->volScale = volScale;
@@ -113,7 +119,7 @@ voicePage_t* voicePageConstr(void)
 	gtk_scale_set_value_pos(GTK_SCALE(revSendScale), GTK_POS_BOTTOM);
 	gtk_range_set_inverted(GTK_RANGE(revSendScale), TRUE);
 
-	//gtk_box_pack_start( GTK_BOX(pageLeft), pListComboBox, FALSE, TRUE, 0);
+	gtk_box_pack_start( GTK_BOX(pageLeft), prgListComboBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(pageLeft), volBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(pageLeft), panBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(pageLeft), attackBox, FALSE, TRUE, 0);
@@ -124,8 +130,8 @@ voicePage_t* voicePageConstr(void)
 	gtk_box_pack_start( GTK_BOX(pageLeft), portaTimeScale, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(volBox), volLabel, FALSE, FALSE, 0);
 	gtk_box_pack_start( GTK_BOX(volBox), volScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(panBox), panScale, TRUE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(panBox), panLabel, FALSE, FALSE, 0);
+	gtk_box_pack_start( GTK_BOX(panBox), panScale, TRUE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(attackBox), attackLabel, FALSE, FALSE, 0);
 	gtk_box_pack_start( GTK_BOX(attackBox), attackScale, TRUE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(decayBox), decayLabel, FALSE, FALSE, 0);
@@ -155,7 +161,7 @@ voicePage_t* voicePageConstr(void)
 
 		// combobox program select
 /*
-	g_signal_connect(G_OBJECT(pListComboBox), "changed", G_CALLBACK(programSelected), tones.toneEntries);
+	g_signal_connect(G_OBJECT(prgListComboBox), "changed", G_CALLBACK(programSelected), tones.toneEntries);
 	g_signal_connect(G_OBJECT(portaTimeScale), "value-changed", G_CALLBACK(portaTimeChanged), NULL);
 	g_signal_connect(G_OBJECT(attackScale), "value-changed", G_CALLBACK(attackChanged), NULL);
 	g_signal_connect(G_OBJECT(decayScale), "value-changed", G_CALLBACK(decayChanged), NULL);
@@ -189,7 +195,6 @@ GList* createToneEntries(FILE* fp)
 		eachTonep->pc = (guint)strtod( eachToneLine[3], NULL);
 
 		toneEntries = g_list_append(toneEntries, eachTonep);
-	//	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), eachToneLine[0]);
 
 	}
 	return toneEntries;

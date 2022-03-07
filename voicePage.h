@@ -18,6 +18,7 @@ typedef struct _portaInst portaInst_t;
 struct _voicePage {
 
 	GtkWidget* voicePage;
+	GtkWidget* prgListComboBox;
 	GtkWidget* pageContents;
 	GtkWidget* pageLeft;
 	GtkWidget* pageRight;
