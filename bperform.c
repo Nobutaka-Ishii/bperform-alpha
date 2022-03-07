@@ -131,37 +131,6 @@ int main(int argc, char** argv)
 
 	GtkWidget* voicePages;
 
-
-	// page0 entries
-//	GtkWidget* voicePage0;
-//	GtkWidget* page0contents;
-//	GtkWidget* page0left;
-//	GtkWidget* page0right;
-//	GtkWidget* portaCheckBox;
-//	GtkWidget* portaTimeScale;
-//	GtkWidget* monoCheckBox;
-//	GtkWidget* volBox;
-//	GtkWidget* volLabel;
-//	GtkWidget* volScale;
-//	GtkWidget* panBox;
-//	GtkWidget* panLabel;
-//	GtkWidget* panScale;
-//	GtkWidget* attackBox;
-//	GtkWidget* attackLabel;
-//	GtkWidget* attackScale;
-//	GtkWidget* decayBox;
-//	GtkWidget* decayLabel;
-//	GtkWidget* decayScale;
-//	GtkWidget* releaseBox;
-//	GtkWidget* releaseLabel;
-//	GtkWidget* releaseScale;
-//	GtkWidget* revSendBox;
-//	GtkWidget* revSendScale;
-//	GtkWidget* revSendLabel;
-//	GtkWidget* choSendBox;
-//	GtkWidget* choSendScale;
-//	GtkWidget* choSendLabel;
-
 	// page1 entries
 	GtkWidget* voicePage1;
 	//GtkWidget* page1contents;
@@ -217,9 +186,6 @@ int main(int argc, char** argv)
 	GtkWidget* initialize;
 	GtkWidget* monauralInit;
 	GtkWidget* stereoInit; 
-
-//	monoInst_t monoInst;
-//	portaInst_t portaInst;
 
 	source = snd_seq_open( &handle, "default", SND_SEQ_OPEN_DUPLEX, 0 );
 	if( source < 0 ){
@@ -350,39 +316,6 @@ int main(int argc, char** argv)
 		voiceBox, GTK_WIDGET(gtk_label_new("Voice2") ) );
 	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
 		voiceBox, GTK_WIDGET(gtk_label_new("Voice3") ) );
-*/
-
-/*
-	portaCheckBox = gtk_check_button_new_with_label("Portament");
-	portaTimeScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
-	monoCheckBox = gtk_check_button_new_with_label("Mono");
-	volBox =  gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	volLabel = gtk_label_new("V");
-	volScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
-	panBox =  gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	panLabel = gtk_label_new("P");
-	panScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, -63, 63, 1);
-	attackBox =  gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	attackLabel = gtk_label_new("A");
-	attackScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
-	decayBox =  gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	decayLabel = gtk_label_new("D");
-	decayScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
-	releaseBox =  gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	releaseLabel = gtk_label_new("R");
-	releaseScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
-	page0contents = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	page0left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	page0right = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	createProgramListComboBox( pListComboBox, &tones);
-
-	revSendBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	revSendLabel = gtk_label_new("Reverb");
-	revSendScale= gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
-
-	choSendBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	choSendLabel = gtk_label_new("Chorus");
-	choSendScale= gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
 */
 
 		// variation strip
