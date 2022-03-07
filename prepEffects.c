@@ -18,7 +18,7 @@ void prepEffects(effects_t* effects, FILE* fp)
 	char** paramLine;
 
 	while( (getline(&line, &n, fp) ) != -1 ){
-		if( line[0] == '\n' ) continue;
+		if( (line[0] == '\n') || (line[0] == '#') ) continue;
 		line[ strlen(line) - 1] = '\0'; // remove last lf character.
 		effectEntry = (eachEffect_t*)malloc(sizeof(eachEffect_t));
 		memset(effectEntry, 0, sizeof(eachEffect_t));

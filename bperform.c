@@ -222,8 +222,8 @@ int main(int argc, char** argv)
 	varEditWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 		// ac1 window and layouts instance generation
-	ac1p = (ac1_t*)(ac1constr)();
-	voicePage0p = (voicePage_t*)(voicePageConstr)();
+	ac1p = ac1constr();
+	voicePage0p = voicePageConstr();
 
 
 	// create menubar bar

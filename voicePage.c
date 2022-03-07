@@ -1,9 +1,11 @@
 #include <bperform.h>
+#define TONE_NAME_LENGTH 16
 
 voicePage_t* voicePageConstr(void)
 {
 	voicePage_t* vpp;
-	//tones tones;
+	FILE* fp;
+	GList* toneEntries;
 
 	GtkWidget* voicePage;
 	GtkWidget* pageContents;
@@ -33,8 +35,9 @@ voicePage_t* voicePageConstr(void)
 	GtkWidget* choSendBox;
 	GtkWidget* choSendScale;
 	GtkWidget* choSendLabel;
-	//monoInst_t* monoInst;
+	GtkWidget* pListComboBox;
 	//portaInst_t* portaInst;
+	//monoInst_t* monoInst;
 
 	vpp = (voicePage_t*)malloc(sizeof(voicePage_t));
 	memset(vpp, 0, sizeof(voicePage_t));
@@ -44,7 +47,7 @@ voicePage_t* voicePageConstr(void)
 	portaCheckBox = gtk_check_button_new_with_label("Portament");
 	portaTimeScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
 	monoCheckBox = gtk_check_button_new_with_label("Mono");
-	//pListComboBox = gtk_combo_box_text_new();
+	pListComboBox = gtk_combo_box_text_new();
 	volBox =  gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	volLabel = gtk_label_new("V");
 	volScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
@@ -68,7 +71,14 @@ voicePage_t* voicePageConstr(void)
 	revSendScale= gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
 	choSendBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	choSendLabel = gtk_label_new("Chorus");
-	choSendScale= gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
+	choSendScale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
+
+	if( (fp = fopen("./entries.txt", "r")) ){
+		// toneEtnries construction
+		toneEntries = createToneEntries(fp);
+		fclose(fp);
+	}
+	
 
 	vpp->voicePage = voicePage;
 	vpp->pageContents = pageContents;
@@ -90,7 +100,7 @@ voicePage_t* voicePageConstr(void)
 	vpp->releaseScale = releaseScale;
 	vpp->pageLeft = pageLeft;
 	vpp->pageRight = pageRight;
-	//vpp->createProgramListComboBox( pListComboBox, &tones);
+	vpp->toneEntries = toneEntries;
 	vpp->revSendBox = revSendBox;
 	vpp->revSendLabel = revSendLabel;
 	vpp->revSendScale = revSendScale;
@@ -134,24 +144,54 @@ voicePage_t* voicePageConstr(void)
 
 
 //	signals
-    g_signal_connect(volScale, "value-changed",\
-        G_CALLBACK(volChanged), NULL);
-    g_signal_connect(revSendScale, "value-changed",\
-        G_CALLBACK(revSend), NULL);
-    g_signal_connect(choSendScale, "value-changed",\
-        G_CALLBACK(choSend), NULL);
+	g_signal_connect(volScale, "value-changed",\
+		G_CALLBACK(volChanged), NULL);
+	g_signal_connect(revSendScale, "value-changed",\
+		G_CALLBACK(revSend), NULL);
+	g_signal_connect(choSendScale, "value-changed",\
+		G_CALLBACK(choSend), NULL);
 //  g_signal_connect(G_OBJECT(portaCheckBox), "clicked", G_CALLBACK(portaCheckBoxChecked), &portaInst);
 //  g_signal_connect(G_OBJECT(monoCheckBox), "clicked", G_CALLBACK(monoCheckBoxChecked), &monoInst);
 
-        // combobox program select
+		// combobox program select
 /*
-    g_signal_connect(G_OBJECT(pListComboBox), "changed", G_CALLBACK(programSelected), tones.toneEntries);
-    g_signal_connect(G_OBJECT(portaTimeScale), "value-changed", G_CALLBACK(portaTimeChanged), NULL);
-    g_signal_connect(G_OBJECT(attackScale), "value-changed", G_CALLBACK(attackChanged), NULL);
-    g_signal_connect(G_OBJECT(decayScale), "value-changed", G_CALLBACK(decayChanged), NULL);
-    g_signal_connect(G_OBJECT(releaseScale), "value-changed", G_CALLBACK(releaseChanged), NULL);
+	g_signal_connect(G_OBJECT(pListComboBox), "changed", G_CALLBACK(programSelected), tones.toneEntries);
+	g_signal_connect(G_OBJECT(portaTimeScale), "value-changed", G_CALLBACK(portaTimeChanged), NULL);
+	g_signal_connect(G_OBJECT(attackScale), "value-changed", G_CALLBACK(attackChanged), NULL);
+	g_signal_connect(G_OBJECT(decayScale), "value-changed", G_CALLBACK(decayChanged), NULL);
+	g_signal_connect(G_OBJECT(releaseScale), "value-changed", G_CALLBACK(releaseChanged), NULL);
 */
 
 	return vpp;
+}
+
+GList* createToneEntries(FILE* fp)
+{
+	GList* toneEntries = NULL;
+	char* line;
+	char** eachToneLine;
+	eachTone_t* eachTonep;
+	size_t n = 0; // mandatory for getline, but can be ignored safely.
+	int fields; // actually not used, because I know the count of entries after splitting.
+
+	while( ( getline(&line, &n, fp) ) != -1 ){
+		if( (line[0] == '\n') || (line[0] == '#') ) continue;
+		line [ strlen(line) - 1 ] = '\0';
+		eachTonep = (eachTone_t*)malloc(sizeof(eachTone_t));
+		memset(eachTonep, 0, sizeof(eachTone_t) );
+		eachTonep->name = (char*)malloc(sizeof(TONE_NAME_LENGTH));
+		memset(eachTonep->name, 0, (TONE_NAME_LENGTH));
+		
+		eachToneLine = splitline(line, '\t', &fields);
+		strcpy(eachTonep->name, eachToneLine[0]);
+		eachTonep->msb = (guint)strtod( eachToneLine[1], NULL);
+		eachTonep->lsb = (guint)strtod( eachToneLine[2], NULL);
+		eachTonep->pc = (guint)strtod( eachToneLine[3], NULL);
+
+		toneEntries = g_list_append(toneEntries, eachTonep);
+	//	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), eachToneLine[0]);
+
+	}
+	return toneEntries;
 }
 

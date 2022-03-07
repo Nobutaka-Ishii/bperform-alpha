@@ -17,7 +17,6 @@ typedef struct _portaInst portaInst_t;
 
 struct _voicePage {
 
-	// page0 entries
 	GtkWidget* voicePage;
 	GtkWidget* pageContents;
 	GtkWidget* pageLeft;
@@ -46,13 +45,26 @@ struct _voicePage {
 	GtkWidget* choSendBox;
 	GtkWidget* choSendScale;
 	GtkWidget* choSendLabel;
+	GList* toneEntries;
+	gchar* currentProgram;
 
 	monoInst_t* monoInst;
 	portaInst_t* portaInst;
 
+	// constructors
 	struct _voicePage* (*voicePageConstr)(void);
+	GList* (*createToneEntries)(GtkWidget* combo);
 };
 typedef struct _voicePage voicePage_t;
 
 voicePage_t* voicePageConstr(void);
+GList* createToneEntries(FILE* fp);
+
+struct _eachTone{
+	gchar* name;
+	guint msb;
+	guint lsb;
+	guint pc;
+};
+typedef struct _eachTone eachTone_t;
 
