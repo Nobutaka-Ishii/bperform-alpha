@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include <ac1.h>
 #define PORTACCNUM 65
 
 struct _toneEntry {
@@ -88,20 +89,6 @@ struct _effectStrip {
 
 typedef struct _effectStrip effectStrip_t;
 
-struct _ac1 {
-	GtkWidget* window;
-	GtkWidget* ccSpinbutton; // cc value spinbutton
-	GtkWidget* intensityScale; // intensity value range object
-	GtkWidget* label;
-	guint	cc;
-	guint	tmpCc;
-	gint	intensity;
-	gint	tmpIntensity;
-	//void (*ac1constr)(struct _ac1_t* ac1);
-};
-
-typedef struct _ac1 ac1_t;
-
 void pgmChange(int pn);
 void sendExc(guint length,...);
 void sendCc(guint cc, guint val);
@@ -130,14 +117,11 @@ void monoCheckBoxChecked(GtkWidget* checkbutton, monoInst_t* monoInst);
 void portaCheckBoxChecked(GtkWidget* checkbutton, portaInst_t* portaInst);
 void portaTimeChanged(GtkWidget* scale);
 void programSelected(GtkWidget* pListComboBox, GList* toneEntries);
-void ac1menuSelected(GtkWidget* menuButton, ac1_t* ac1p);
 gboolean delete_event (void);
 gboolean quit_button_pushed (GtkWidget* widget, GdkEvent *event, gpointer data);
 void destroy(void);
 void reverbsend( GtkRange* range, GdkEvent* event, gpointer data);
 void closeEditWindow(GtkWidget* window, effectStrip_t* effectStripp);
-void ac1intensityChanged(GtkWidget* scale, ac1_t* ac1p);
-void ac1ccChanged(GtkWidget* spinbutton, ac1_t* ac1p);
-void ac1okButtonClicked(GtkWidget* button, ac1_t* ac1p);
 char** splitline(char* original, char delim, int* fields);
+ac1_t* ac1constr(void);
 

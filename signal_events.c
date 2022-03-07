@@ -9,33 +9,8 @@
 extern int source; // source alsa-client id;
 extern int sport; // app's source MIDI port number
 extern int tport; // target client's midi port number
-extern int dstMaxEntries;
 extern snd_seq_t *handle;
 
-void ac1okButtonClicked(GtkWidget* button, ac1_t* ac1p)
-{
-	ac1p->cc = ac1p->tmpCc;
-	ac1p->intensity = ac1p->tmpIntensity;
-	sendExc(4, 0x03, 0x00, 0x10, ac1p->intensity);
-	sendExc(4, 0x08, 0x00, 0x59, ac1p->cc);
-	gtk_widget_hide( ac1p->window );
-}
-
-void ac1intensityChanged(GtkWidget* scale, ac1_t* ac1p)
-{
-	gint val = gtk_range_get_value( GTK_RANGE(scale) ) + 64;
-	ac1p->tmpIntensity = val;
-}
-
-void ac1ccChanged(GtkWidget* spinbutton, ac1_t* ac1p)
-{
-	guint val = gtk_spin_button_get_value( GTK_SPIN_BUTTON(spinbutton) );
-	ac1p->tmpCc = val;
-}
-
-void ac1menuSelected(GtkWidget* menuButton, ac1_t* ac1p){
-	gtk_widget_show_all(ac1p->window);
-}
 
 void varEdit(GtkWidget* button, effectStrip_t* varStripp)
 {

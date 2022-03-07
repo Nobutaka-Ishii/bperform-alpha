@@ -109,7 +109,7 @@ int main(int argc, char** argv)
 	effectStrip_t ins0strip;
 	effectStrip_t ins1strip;
 	tones tones;
-	ac1_t ac1;
+	ac1_t* ac1p;
 	GList* midiTargets = NULL;
 
 		// variables for alsa connection destination port
@@ -126,6 +126,8 @@ int main(int argc, char** argv)
 	GtkWidget* base; // acommodate menubar on top and others on bottom
 	GtkWidget* menubar; // occupies top place
 	GtkWidget* exceptMenu; // occupies button place
+	GtkWidget* ac1menu;
+
 
 	GtkWidget* voicePages;
 
@@ -215,16 +217,6 @@ int main(int argc, char** argv)
 	GtkWidget* initialize;
 	GtkWidget* monauralInit;
 	GtkWidget* stereoInit; 
-	GtkWidget* ac1menu;
-	GtkWidget* ac1window;
-	GtkWidget* ac1base;
-	GtkWidget* ac1boxUpper;
-	GtkWidget* ac1boxMiddle;
-	GtkWidget* ac1boxLower;
-	GtkWidget* ac1label;
-	GtkWidget* ccSpinbutton;
-	GtkWidget* intensityScale;
-	GtkWidget* ac1okButton;
 
 	monoInst_t monoInst;
 	portaInst_t portaInst;
@@ -264,15 +256,8 @@ int main(int argc, char** argv)
 	varEditWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 		// ac1 window and layouts instance generation
-	memset(&ac1, 0, sizeof(ac1_t));
-	ac1window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	ac1base = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	ac1boxUpper = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	ac1boxMiddle = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	ac1boxLower = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	ac1label = gtk_label_new("CC#");
-	ccSpinbutton = gtk_spin_button_new_with_range(0, 95, 1); // for CC target number input
-	intensityScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, -64, 63, 1);
+	ac1p = (ac1_t*)(ac1constr)();
+
 
 	// create menubar bar
 	menubar = gtk_menu_bar_new();
@@ -283,7 +268,6 @@ int main(int argc, char** argv)
 	monauralInit = gtk_menu_item_new_with_label("Mono AD init");
 	stereoInit = gtk_menu_item_new_with_label("Stereo AD init");
 	ac1menu = gtk_menu_item_new_with_label("AC1 config");
-	ac1okButton = gtk_button_new_with_label("OK");
 
 	connectDownlist = gtk_menu_new();
 	connect = gtk_menu_item_new_with_label("Connect");
@@ -505,16 +489,6 @@ int main(int argc, char** argv)
 	portaInst.portaEnabled = 0;
 	portaInst.scale = portaTimeScale;
 
-	// ac1 instance construction
-	ac1.window = ac1window;
-	ac1.ccSpinbutton = ccSpinbutton;
-	ac1.intensityScale = intensityScale;
-	ac1.label = ac1label;
-	ac1.cc = 45; // my default cc value
-	ac1.tmpCc = 45; // my default cc value
-	ac1.intensity = 63; // my default intensity value
-	ac1.tmpIntensity = 63; // my default intensity value
-
 	//
 	gtk_scale_set_value_pos(GTK_SCALE(choSendScale), GTK_POS_BOTTOM);
 	gtk_range_set_inverted(GTK_RANGE(choSendScale), TRUE);
@@ -538,6 +512,8 @@ int main(int argc, char** argv)
 		G_CALLBACK(delete_event), NULL);
 	g_signal_connect(G_OBJECT(window), "destroy",\
 		G_CALLBACK(destroy), NULL);
+	g_signal_connect(G_OBJECT(ac1menu), "activate", G_CALLBACK( ac1p->ac1menuSelected ), ac1p);
+
 
 		// menu selection
 	g_signal_connect(G_OBJECT(initialize), "activate",\
@@ -596,16 +572,6 @@ int main(int argc, char** argv)
 		G_CALLBACK(insEdit), &ins1strip);
 	g_signal_connect(G_OBJECT(ins1editWindow), "delete_event", \
 		G_CALLBACK(closeEditWindow), &ins1strip);
-
-		// ac1 window internal events
-	g_signal_connect(G_OBJECT(intensityScale), "value-changed", \
-		G_CALLBACK(ac1intensityChanged), &ac1);
-	g_signal_connect(G_OBJECT(ccSpinbutton), "value-changed", \
-		G_CALLBACK(ac1ccChanged), &ac1);
-	g_signal_connect(G_OBJECT(ac1menu), "activate",\
-		G_CALLBACK(ac1menuSelected), &ac1);
-	g_signal_connect(G_OBJECT(ac1okButton), "clicked",\
-		G_CALLBACK(ac1okButtonClicked), &ac1);
 
 		// midi connection button actions
 	midiTargets = g_list_first(midiTargets);
@@ -698,15 +664,6 @@ int main(int argc, char** argv)
 	gtk_box_pack_start( GTK_BOX(base), menubar, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(base), exceptMenu, TRUE, TRUE, 0);
 	gtk_container_add( GTK_CONTAINER(window), base);
-
-	gtk_box_pack_start( GTK_BOX(ac1boxUpper), ac1label, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(ac1boxUpper), ccSpinbutton, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(ac1boxMiddle), intensityScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(ac1boxLower), ac1okButton, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(ac1base), ac1boxUpper, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(ac1base), ac1boxMiddle, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(ac1base), ac1boxLower, TRUE, 0, 0);
-	gtk_container_add( GTK_CONTAINER(ac1window), ac1base);
 
 	gtk_widget_show_all(window);
 	gtk_main();
