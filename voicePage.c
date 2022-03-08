@@ -36,8 +36,6 @@ voicePage_t* voicePageConstr(void)
 	GtkWidget* choSendScale;
 	GtkWidget* choSendLabel;
 	GtkWidget* prgListComboBox;
-	//portaInst_t* portaInst;
-	//monoInst_t* monoInst;
 
 	vpp = (voicePage_t*)malloc(sizeof(voicePage_t));
 	memset(vpp, 0, sizeof(voicePage_t));
@@ -112,6 +110,10 @@ voicePage_t* voicePageConstr(void)
 	vpp->choSendBox = choSendBox;
 	vpp->choSendLabel = choSendLabel;
 	vpp->choSendScale = choSendScale;
+	vpp->monoEnabled = 0;
+	vpp->portaEnabled = 0;
+	vpp->portaTime = 0;
+	vpp->monoCheckBoxChecked = monoCheckBoxChecked;
 
 	gtk_scale_set_value_pos(GTK_SCALE(choSendScale), GTK_POS_BOTTOM);
 	gtk_range_set_inverted(GTK_RANGE(choSendScale), TRUE);
@@ -155,8 +157,9 @@ voicePage_t* voicePageConstr(void)
 		G_CALLBACK(revSend), NULL);
 	g_signal_connect(choSendScale, "value-changed",\
 		G_CALLBACK(choSend), NULL);
-//  g_signal_connect(G_OBJECT(portaCheckBox), "clicked", G_CALLBACK(portaCheckBoxChecked), &portaInst);
-//  g_signal_connect(G_OBJECT(monoCheckBox), "clicked", G_CALLBACK(monoCheckBoxChecked), &monoInst);
+	g_signal_connect(G_OBJECT(portaCheckBox), "clicked", G_CALLBACK(portaCheckBoxChecked), vpp);
+	g_signal_connect(G_OBJECT(monoCheckBox), "clicked", G_CALLBACK(monoCheckBoxChecked), vpp); 
+	g_signal_connect(G_OBJECT(portaTimeScale), "value-changed", G_CALLBACK(portaTimeChanged), vpp);
 
 		// combobox program select
 	toneEntries = g_list_first(toneEntries);
@@ -164,7 +167,6 @@ voicePage_t* voicePageConstr(void)
 		"changed", G_CALLBACK(programSelected), toneEntries );
 /*
 	g_signal_connect(G_OBJECT(prgListComboBox), "changed", G_CALLBACK(programSelected), tones.toneEntries);
-	g_signal_connect(G_OBJECT(portaTimeScale), "value-changed", G_CALLBACK(portaTimeChanged), NULL);
 	g_signal_connect(G_OBJECT(attackScale), "value-changed", G_CALLBACK(attackChanged), NULL);
 	g_signal_connect(G_OBJECT(decayScale), "value-changed", G_CALLBACK(decayChanged), NULL);
 	g_signal_connect(G_OBJECT(releaseScale), "value-changed", G_CALLBACK(releaseChanged), NULL);
@@ -216,5 +218,33 @@ void programSelected(GtkWidget* pListComboBox, GList* toneEntries)
 	sendCc(0, ((eachTone_t*)(toneEntries->data))->msb ); // bank select MSB
 	sendCc(32, ((eachTone_t*)(toneEntries->data))->lsb ); // bank select LSB
 	pgmChange( ((eachTone_t*)(toneEntries->data))->pc );
+}
+
+void portaCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* vpp)
+{
+	if(!vpp->portaEnabled){
+		sendCc(PORTACCNUM, 127);
+	}else{
+		sendCc(PORTACCNUM, 0);
+	}
+
+	vpp->portaEnabled = !vpp->portaEnabled;
+}
+
+void portaTimeChanged(GtkWidget* scale, voicePage_t* vpp)
+{
+	guint val = gtk_range_get_value( GTK_RANGE(scale) );
+	sendCc(5, val);
+	vpp->portaTime = val;
+}
+
+void monoCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* vpp)
+{
+	if(!vpp->monoEnabled){
+		sendExc(4, 0x08, 0x00, 0x5, 0x00);
+	}else{
+		sendExc(4, 0x08, 0x00, 0x5, 0x01);
+	}
+	vpp->monoEnabled = !vpp->monoEnabled;
 }
 

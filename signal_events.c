@@ -179,24 +179,6 @@ void ins1targetChnlSelected( GtkWidget* combo)
 	}
 }
 
-void portaCheckBoxChecked(GtkWidget* checkbutton, portaInst_t* portaInst)
-{
-	if(!portaInst->portaEnabled){
-		sendCc(PORTACCNUM, 127);
-	}else{
-		sendCc(PORTACCNUM, 0);
-	}
-
-	portaInst->portaEnabled = !portaInst->portaEnabled;
-}
-
-void portaTimeChanged(GtkWidget* scale)
-{
-	guint val = gtk_range_get_value( GTK_RANGE(scale) );
-	//g_print("%d\n", val);
-	sendCc(5, val);
-}
-
 gboolean delete_event (void)
 {
 	g_print("delete event occurred\n");

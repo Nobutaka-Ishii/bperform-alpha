@@ -1,19 +1,5 @@
-struct _monoInst {
-	GtkWidget* checkBox;
-	int monoEnabled; // 0:poly, 1:mono
-	void (*toggleMono)(struct _monoInst* monoInst);
-};
-typedef struct _monoInst monoInst_t;
-
-struct _portaInst {
-	GtkWidget* checkBox;
-	GtkWidget* label;
-	GtkWidget* scale;
-	guint portaEnabled;
-	guint value;
-	guint (*getPortaDuration)(struct _portaInst* portaInst);
-};
-typedef struct _portaInst portaInst_t;
+#include <gtk/gtk.h>
+#define PORTACCNUM 65
 
 struct _voicePage {
 
@@ -49,17 +35,18 @@ struct _voicePage {
 	GList* toneEntries;
 	gchar* currentProgram;
 
-	monoInst_t* monoInst;
-	portaInst_t* portaInst;
+	int monoEnabled;
+	int portaEnabled;
+	uint portaTime;
 
 	// constructors
 	struct _voicePage* (*voicePageConstr)(void);
 	GList* (*createToneEntries)(GtkWidget* combo);
+	void (*monoCheckBoxChecked)(GtkWidget* checkbutton, struct _voicePage*);
+	void (*portaCheckBoxChecked)(GtkWidget* checkbutton, struct _voicePage*);
+	void (*portaTimeChanged)(GtkWidget* scale, struct _voicePage*);
 };
 typedef struct _voicePage voicePage_t;
-
-voicePage_t* voicePageConstr(void);
-GList* createToneEntries(FILE* fp);
 
 struct _eachTone{
 	gchar* name;
@@ -69,5 +56,10 @@ struct _eachTone{
 };
 typedef struct _eachTone eachTone_t;
 
+voicePage_t* voicePageConstr(void);
+GList* createToneEntries(FILE* fp);
 void programSelected(GtkWidget* pListComboBox, GList* toneEntries);
+void monoCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* voicePage);
+void portaCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* voicePage); 
+void portaTimeChanged(GtkWidget* scale, voicePage_t* voicePage);
 

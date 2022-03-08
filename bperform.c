@@ -24,17 +24,6 @@ void initializeSelected(GtkWidget* menu)
 	sendExc(4, 0x4c, 0x00, 0x7f, 0x00);
 }
 
-
-void monoCheckBoxChecked(GtkWidget* checkbutton, monoInst_t* monoInst)
-{
-	if(!monoInst->monoEnabled){
-		sendExc(4, 0x08, 0x00, 0x5, 0x00);
-	}else{
-		sendExc(4, 0x08, 0x00, 0x5, 0x01);
-	}
-	monoInst->monoEnabled = !monoInst->monoEnabled;
-}
-
 void createEffectTypeComboBox(GtkWidget* comboBox, effects_t* effectsp)
 {
 	GList* list = effectsp->effectList;
