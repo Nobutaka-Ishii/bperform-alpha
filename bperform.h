@@ -5,12 +5,6 @@
 
 typedef struct _toneEntry toneEntry;
 
-struct _tones {
-	GList* toneEntries;
-};
-
-typedef struct _tones tones;
-
 struct _midiTarget{
 	guint clientId;
 	guint portId;
