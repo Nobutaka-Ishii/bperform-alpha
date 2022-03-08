@@ -38,13 +38,31 @@ struct _voicePage {
 	int monoEnabled;
 	int portaEnabled;
 	uint portaTime;
+	uint vol;
+	uint pan;
+	uint attack;
+	uint release;
+	uint decay;
+	uint cho;
+	uint rev;
 
 	// constructors
 	struct _voicePage* (*voicePageConstr)(void);
 	GList* (*createToneEntries)(GtkWidget* combo);
+
+	// methods
+	//void (*programSelected)(GtkWidget* pListComboBox, GList* toneEntries);
+	void (*programSelected)(GtkWidget* pListComboBox, struct _voicePage*);
+	void (*volChanged)(GtkRange* range, struct _voicePage*);
+	void (*panChanged)(GtkRange* range, struct _voicePage*);
+	void (*attackChanged)(GtkRange* range, struct _voicePage*);
+	void (*decayChanged)(GtkRange* range, struct _voicePage*);
+	void (*releaseChanged)(GtkRange* range, struct _voicePage*);
 	void (*monoCheckBoxChecked)(GtkWidget* checkbutton, struct _voicePage*);
 	void (*portaCheckBoxChecked)(GtkWidget* checkbutton, struct _voicePage*);
-	void (*portaTimeChanged)(GtkWidget* scale, struct _voicePage*);
+	void (*portaTimeChanged)(GtkRange* range, struct _voicePage*);
+	void (*choSend)(GtkRange* range, struct _voicePage*);
+	void (*revSend)(GtkRange* range, struct _voicePage*);
 };
 typedef struct _voicePage voicePage_t;
 
@@ -58,8 +76,16 @@ typedef struct _eachTone eachTone_t;
 
 voicePage_t* voicePageConstr(void);
 GList* createToneEntries(FILE* fp);
-void programSelected(GtkWidget* pListComboBox, GList* toneEntries);
+void programSelected(GtkWidget* pListComboBox, voicePage_t* vpp);
+//void programSelected(GtkWidget* pListComboBox, GList* toneEntries);
+void volChanged(GtkRange* range, voicePage_t* vpp);
+void panChanged(GtkRange* range, voicePage_t* vpp);
 void monoCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* voicePage);
 void portaCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* voicePage); 
-void portaTimeChanged(GtkWidget* scale, voicePage_t* voicePage);
-
+void portaTimeChanged(GtkRange* range, voicePage_t* voicePage);
+void revSend(GtkRange* range, voicePage_t* vpp);
+void choSend(GtkRange* range, voicePage_t* vpp);
+void attackChanged(GtkRange* range, voicePage_t* vpp);
+void releaseChanged(GtkRange* range, voicePage_t* vpp);
+void decayChanged(GtkRange* range, voicePage_t* vpp);
+ 
