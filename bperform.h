@@ -3,13 +3,6 @@
 #include <voicePage.h>
 #define PORTACCNUM 65
 
-struct _toneEntry {
-	gchar name[16];
-	char msb[4];
-	char lsb[4];
-	char pc[4];
-};
-
 typedef struct _toneEntry toneEntry;
 
 struct _tones {
@@ -100,7 +93,7 @@ void ins1targetChnlSelected( GtkWidget* combo);
 void monoCheckBoxChecked(GtkWidget* checkbutton, monoInst_t* monoInst);
 void portaCheckBoxChecked(GtkWidget* checkbutton, portaInst_t* portaInst);
 void portaTimeChanged(GtkWidget* scale);
-void programSelected(GtkWidget* pListComboBox, GList* toneEntries);
+// void programSelected(GtkWidget* pListComboBox, GList** toneEntries);
 gboolean delete_event (void);
 gboolean quit_button_pushed (GtkWidget* widget, GdkEvent *event, gpointer data);
 void destroy(void);

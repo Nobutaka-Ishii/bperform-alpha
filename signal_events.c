@@ -197,25 +197,6 @@ void portaTimeChanged(GtkWidget* scale)
 	sendCc(5, val);
 }
 
-void programSelected(GtkWidget* pListComboBox, GList* toneEntries){
-	gchar* pName;
-	GList* list;
-
-	list = toneEntries;
-
-	pName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(pListComboBox) );
-
-	do {
-		if( !strcmp(pName, ((toneEntry*)(list->data))->name ) ) break;
-		list = list->next;
-	} while( list );
-
-	sendCc(0, atoi( ((toneEntry*)(list->data))->msb) ); // bank select MSB
-	sendCc(32, atoi( ((toneEntry*)(list->data))->lsb) ); // bank select LSB
-	pgmChange( atoi( ((toneEntry*)(list->data))->pc) );
-
-}
-
 gboolean delete_event (void)
 {
 	g_print("delete event occurred\n");

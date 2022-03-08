@@ -69,3 +69,5 @@ struct _eachTone{
 };
 typedef struct _eachTone eachTone_t;
 
+void programSelected(GtkWidget* pListComboBox, GList* toneEntries);
+

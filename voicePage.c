@@ -65,7 +65,6 @@ voicePage_t* voicePageConstr(void)
 	releaseScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
 	pageLeft = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	pageRight = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	//createProgramListComboBox( prgListComboBox, &tones);							 
 	revSendBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	revSendLabel = gtk_label_new("Reverb");
 	revSendScale= gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
@@ -79,11 +78,11 @@ voicePage_t* voicePageConstr(void)
 		fclose(fp);
 	}
 	
-	toneEntries = g_list_first(toneEntries);
-	while( toneEntries->next ){
+	while( toneEntries ) {
 		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(prgListComboBox),\
 			((eachTone_t*)(toneEntries->data))->name );
-		toneEntries = toneEntries->next;
+		if( !(toneEntries->next) ) break;
+		toneEntries = toneEntries->next; 
 	}
 
 	vpp->voicePage = voicePage;
@@ -160,6 +159,9 @@ voicePage_t* voicePageConstr(void)
 //  g_signal_connect(G_OBJECT(monoCheckBox), "clicked", G_CALLBACK(monoCheckBoxChecked), &monoInst);
 
 		// combobox program select
+	toneEntries = g_list_first(toneEntries);
+	g_signal_connect(G_OBJECT(prgListComboBox),\
+		"changed", G_CALLBACK(programSelected), toneEntries );
 /*
 	g_signal_connect(G_OBJECT(prgListComboBox), "changed", G_CALLBACK(programSelected), tones.toneEntries);
 	g_signal_connect(G_OBJECT(portaTimeScale), "value-changed", G_CALLBACK(portaTimeChanged), NULL);
@@ -195,8 +197,24 @@ GList* createToneEntries(FILE* fp)
 		eachTonep->pc = (guint)strtod( eachToneLine[3], NULL);
 
 		toneEntries = g_list_append(toneEntries, eachTonep);
-
 	}
 	return toneEntries;
+}
+
+void programSelected(GtkWidget* pListComboBox, GList* toneEntries)
+{
+	gchar* pName;
+
+	pName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(pListComboBox) );
+	toneEntries = g_list_first(toneEntries);
+
+	while( toneEntries ){
+		if( !strcmp(pName, ((eachTone_t*)(toneEntries->data))->name ) ) break;
+		toneEntries = toneEntries->next;
+	}
+
+	sendCc(0, ((eachTone_t*)(toneEntries->data))->msb ); // bank select MSB
+	sendCc(32, ((eachTone_t*)(toneEntries->data))->lsb ); // bank select LSB
+	pgmChange( ((eachTone_t*)(toneEntries->data))->pc );
 }
 

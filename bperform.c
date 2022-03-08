@@ -68,37 +68,6 @@ static void createVarTargetComboBox(GtkWidget* comboBox)
 	}
 }
 
-void createProgramListComboBox(GtkWidget* comboBox, tones* tonesp)
-{
-	FILE *fp;
-	char* pn = NULL;
-	char* msb = NULL;
-	char* lsb = NULL;
-	char* pc = NULL;
-	size_t n = 0;
-	toneEntry* entry;
-	GList* list = NULL;
-
-	if( (fp = fopen("./entries.txt", "r")) ){
-		while( ( getdelim(&pn, &n, '\t', fp) ) != -1 ){
-			getdelim(&msb, &n, '\t', fp);
-			getdelim(&lsb, &n, '\t', fp);
-			getdelim(&pc, &n, '\n', fp);
-			gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), pn);
-
-			entry = (toneEntry*)malloc(sizeof(toneEntry));
-			strcpy(entry->name, pn);
-			strcpy(entry->msb, msb);
-			strcpy(entry->lsb, lsb);
-			strcpy(entry->pc, pc);
-
-			list = g_list_append(list, entry);
-		}
-		fclose(fp);
-	}
-	tonesp->toneEntries = list;
-}
-
 int main(int argc, char** argv)
 {
 	FILE* fp;
