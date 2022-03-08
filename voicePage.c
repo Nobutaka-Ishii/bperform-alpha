@@ -170,8 +170,8 @@ voicePage_t* voicePageConstr(void)
 	g_signal_connect(G_OBJECT(attackScale), "value-changed", G_CALLBACK(vpp->attackChanged), vpp);
 	g_signal_connect(G_OBJECT(decayScale), "value-changed", G_CALLBACK(vpp->decayChanged), vpp);
 	g_signal_connect(G_OBJECT(releaseScale), "value-changed", G_CALLBACK(vpp->releaseChanged), vpp);
-	g_signal_connect(G_OBJECT(revSendScale), "value-changed", G_CALLBACK(vpp->revSend), NULL);
-	g_signal_connect(G_OBJECT(choSendScale), "value-changed", G_CALLBACK(vpp->choSend), NULL);
+	g_signal_connect(G_OBJECT(revSendScale), "value-changed", G_CALLBACK(vpp->revSend), vpp);
+	g_signal_connect(G_OBJECT(choSendScale), "value-changed", G_CALLBACK(vpp->choSend), vpp);
 	g_signal_connect(G_OBJECT(portaCheckBox), "clicked", G_CALLBACK(vpp->portaCheckBoxChecked), vpp);
 	g_signal_connect(G_OBJECT(monoCheckBox), "clicked", G_CALLBACK(vpp->monoCheckBoxChecked), vpp); 
 	g_signal_connect(G_OBJECT(portaTimeScale), "value-changed", G_CALLBACK(vpp->portaTimeChanged), vpp);
