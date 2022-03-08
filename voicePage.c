@@ -71,7 +71,7 @@ voicePage_t* voicePageConstr(void)
 	choSendScale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
 
 	if( (fp = fopen("./entries.txt", "r")) ){
-		// toneEtnries construction
+	// toneEtnries construction
 		toneEntries = createToneEntries(fp);
 		fclose(fp);
 	}
@@ -82,6 +82,12 @@ voicePage_t* voicePageConstr(void)
 		if( !(toneEntries->next) ) break;
 		toneEntries = toneEntries->next; 
 	}
+
+	vpp->vol = 0x7f;
+	vpp->pan = 0x40;
+	vpp->monoEnabled = 0;
+	vpp->portaEnabled = 0;
+	vpp->portaTime = 0;
 
 	vpp->voicePage = voicePage;
 	vpp->pageContents = pageContents;
@@ -110,10 +116,18 @@ voicePage_t* voicePageConstr(void)
 	vpp->choSendBox = choSendBox;
 	vpp->choSendLabel = choSendLabel;
 	vpp->choSendScale = choSendScale;
-	vpp->monoEnabled = 0;
-	vpp->portaEnabled = 0;
-	vpp->portaTime = 0;
+
+	vpp->programSelected = programSelected;
+	vpp->volChanged = volChanged;
+	vpp->panChanged = panChanged;
+	vpp->attackChanged = attackChanged;
+	vpp->decayChanged = decayChanged;
+	vpp->releaseChanged = releaseChanged;
 	vpp->monoCheckBoxChecked = monoCheckBoxChecked;
+	vpp->portaCheckBoxChecked = portaCheckBoxChecked;
+	vpp->portaTimeChanged = portaTimeChanged;
+	vpp->choSend = choSend;
+	vpp->revSend = revSend;
 
 	gtk_scale_set_value_pos(GTK_SCALE(choSendScale), GTK_POS_BOTTOM);
 	gtk_range_set_inverted(GTK_RANGE(choSendScale), TRUE);
@@ -151,26 +165,20 @@ voicePage_t* voicePageConstr(void)
 
 
 //	signals
-	g_signal_connect(volScale, "value-changed",\
-		G_CALLBACK(volChanged), NULL);
-	g_signal_connect(revSendScale, "value-changed",\
-		G_CALLBACK(revSend), NULL);
-	g_signal_connect(choSendScale, "value-changed",\
-		G_CALLBACK(choSend), NULL);
-	g_signal_connect(G_OBJECT(portaCheckBox), "clicked", G_CALLBACK(portaCheckBoxChecked), vpp);
-	g_signal_connect(G_OBJECT(monoCheckBox), "clicked", G_CALLBACK(monoCheckBoxChecked), vpp); 
-	g_signal_connect(G_OBJECT(portaTimeScale), "value-changed", G_CALLBACK(portaTimeChanged), vpp);
+	g_signal_connect(G_OBJECT(volScale), "value-changed", G_CALLBACK(vpp->volChanged), vpp);
+	g_signal_connect(G_OBJECT(panScale), "value-changed", G_CALLBACK(vpp->panChanged), vpp);
+	g_signal_connect(G_OBJECT(attackScale), "value-changed", G_CALLBACK(vpp->attackChanged), vpp);
+	g_signal_connect(G_OBJECT(decayScale), "value-changed", G_CALLBACK(vpp->decayChanged), vpp);
+	g_signal_connect(G_OBJECT(releaseScale), "value-changed", G_CALLBACK(vpp->releaseChanged), vpp);
+	g_signal_connect(G_OBJECT(revSendScale), "value-changed", G_CALLBACK(vpp->revSend), NULL);
+	g_signal_connect(G_OBJECT(choSendScale), "value-changed", G_CALLBACK(vpp->choSend), NULL);
+	g_signal_connect(G_OBJECT(portaCheckBox), "clicked", G_CALLBACK(vpp->portaCheckBoxChecked), vpp);
+	g_signal_connect(G_OBJECT(monoCheckBox), "clicked", G_CALLBACK(vpp->monoCheckBoxChecked), vpp); 
+	g_signal_connect(G_OBJECT(portaTimeScale), "value-changed", G_CALLBACK(vpp->portaTimeChanged), vpp);
 
-		// combobox program select
+	// combobox program select
 	toneEntries = g_list_first(toneEntries);
-	g_signal_connect(G_OBJECT(prgListComboBox),\
-		"changed", G_CALLBACK(programSelected), toneEntries );
-/*
-	g_signal_connect(G_OBJECT(prgListComboBox), "changed", G_CALLBACK(programSelected), tones.toneEntries);
-	g_signal_connect(G_OBJECT(attackScale), "value-changed", G_CALLBACK(attackChanged), NULL);
-	g_signal_connect(G_OBJECT(decayScale), "value-changed", G_CALLBACK(decayChanged), NULL);
-	g_signal_connect(G_OBJECT(releaseScale), "value-changed", G_CALLBACK(releaseChanged), NULL);
-*/
+	g_signal_connect(G_OBJECT(prgListComboBox), "changed", G_CALLBACK(vpp->programSelected), vpp );
 
 	return vpp;
 }
@@ -197,15 +205,16 @@ GList* createToneEntries(FILE* fp)
 		eachTonep->msb = (guint)strtod( eachToneLine[1], NULL);
 		eachTonep->lsb = (guint)strtod( eachToneLine[2], NULL);
 		eachTonep->pc = (guint)strtod( eachToneLine[3], NULL);
-
+	
 		toneEntries = g_list_append(toneEntries, eachTonep);
 	}
 	return toneEntries;
 }
 
-void programSelected(GtkWidget* pListComboBox, GList* toneEntries)
+void programSelected(GtkWidget* pListComboBox, voicePage_t* vpp)
 {
 	gchar* pName;
+	GList* toneEntries = vpp->toneEntries;
 
 	pName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(pListComboBox) );
 	toneEntries = g_list_first(toneEntries);
@@ -231,7 +240,7 @@ void portaCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* vpp)
 	vpp->portaEnabled = !vpp->portaEnabled;
 }
 
-void portaTimeChanged(GtkWidget* scale, voicePage_t* vpp)
+void portaTimeChanged(GtkRange* scale, voicePage_t* vpp)
 {
 	guint val = gtk_range_get_value( GTK_RANGE(scale) );
 	sendCc(5, val);
@@ -246,5 +255,55 @@ void monoCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* vpp)
 		sendExc(4, 0x08, 0x00, 0x5, 0x01);
 	}
 	vpp->monoEnabled = !vpp->monoEnabled;
+}
+
+void volChanged(GtkRange* range, voicePage_t* vpp)
+{
+	guint val = gtk_range_get_value(range);
+	sendCc(7, val);
+	vpp->vol = val;
+}
+
+void panChanged(GtkRange* range, voicePage_t* vpp)
+{
+	guint val = gtk_range_get_value(range) + 64;
+	sendCc(10, val);
+	vpp->pan = val;
+}
+
+
+void revSend(GtkRange* range, voicePage_t* vpp)
+{
+	guint val = gtk_range_get_value(range);
+	sendCc(91, val);
+	vpp->rev = val;
+}
+
+void choSend(GtkRange* range, voicePage_t* vpp)
+{
+	guint val = gtk_range_get_value(range);
+	sendCc(93, val);
+	vpp->cho = val;
+}
+
+void attackChanged(GtkRange* range, voicePage_t* vpp)
+{
+	guint val = gtk_range_get_value(range);
+	sendCc(73, val);
+	vpp->attack = val;
+}
+
+void decayChanged(GtkRange* range, voicePage_t* vpp)
+{
+	guint val = gtk_range_get_value(range);
+	sendCc(75, val);
+	vpp->decay = val;
+}
+
+void releaseChanged(GtkRange* range, voicePage_t* vpp)
+{
+	guint val = gtk_range_get_value(range);
+	sendCc(72, val);
+	vpp->decay = val;
 }
 

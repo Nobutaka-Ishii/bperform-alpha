@@ -83,43 +83,6 @@ void ins1changed(GtkRange* range, effects_t* ins1p)
 	}
 }
 
-void volChanged(GtkRange* range)
-{
-		guint val = gtk_range_get_value(range);
-		sendCc(7, val);
-}
-
-
-void revSend(GtkRange* range)
-{
-		guint val = gtk_range_get_value(range);
-		sendCc(91, val);
-}
-
-void choSend(GtkRange* range)
-{
-		guint val = gtk_range_get_value(range);
-		sendCc(93, val);
-}
-
-void attackChanged(GtkRange* range)
-{
-		guint val = gtk_range_get_value(range);
-		sendCc(73, val);
-}
-
-void decayChanged(GtkRange* range)
-{
-		guint val = gtk_range_get_value(range);
-		sendCc(75, val);
-}
-
-void releaseChanged(GtkRange* range)
-{
-		guint val = gtk_range_get_value(range);
-		sendCc(72, val);
-}
-
 void init_synth(void)
 {
 	// put variation effect block into insert effect mode.
