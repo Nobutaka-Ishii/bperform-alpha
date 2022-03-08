@@ -1,10 +1,11 @@
 #include <gtk/gtk.h>
-#include "bperform.h"
+#include <bperform.h>
 #include <alsa/asoundlib.h>
 #include <alsa/seq.h>
 #include <alsa/seq_event.h>
 #include <alsa/seqmid.h>
 #include <alsa/seq_midi_event.h>
+#include <effectStrip.h>
 
 extern int source; // source alsa-client id;
 extern int sport; // app's source MIDI port number
@@ -12,6 +13,7 @@ extern int tport; // target client's midi port number
 extern snd_seq_t *handle;
 
 
+/*
 void varEdit(GtkWidget* button, effectStrip_t* varStripp)
 {
 	GtkWidget* paramLabel;
@@ -19,7 +21,6 @@ void varEdit(GtkWidget* button, effectStrip_t* varStripp)
 	paramLabel = gtk_label_new(varStripp->effectInfo->currentInsType);
 	gtk_box_pack_start( GTK_BOX(varStripp->editWindowBox), paramLabel, TRUE, 0, 0);
 	gtk_window_set_default_size(GTK_WINDOW(varStripp->editWindow), 200, 400);
-	//gtk_widget_set_sensitive(varStripp->insEditButton, FALSE);
 	gtk_widget_show_all(varStripp->editWindow);
 }
 
@@ -30,19 +31,8 @@ void insEdit(GtkWidget* button, effectStrip_t* stripp)
 	paramLabel = gtk_label_new(stripp->effectInfo->currentInsType);
 	gtk_box_pack_start( GTK_BOX(stripp->editWindowBox), paramLabel, TRUE, 0, 0);
 	gtk_window_set_default_size(GTK_WINDOW(stripp->editWindow), 200, 400);
-	//gtk_widget_set_sensitive(stripp->insEditButton, FALSE);
+	gtk_widget_set_sensitive(stripp->insEditButton, FALSE);
 	gtk_widget_show_all(stripp->editWindow);
-}
-
-
-void targetMidiPortSelected( GtkWidget *label, midiTarget_t* midiTarget_p){
-	if( midiTarget_p->checked){
-		snd_seq_disconnect_to(handle, 0, midiTarget_p->clientId, midiTarget_p->portId);
-		midiTarget_p->checked = 0;
-	} else {
-		snd_seq_connect_to(handle, 0, midiTarget_p->clientId, midiTarget_p->portId);
-		midiTarget_p->checked = 1;
-	}
 }
 
 void varTypeSelected( GtkWidget* combo, effects_t* varp)
@@ -71,11 +61,9 @@ void varTypeSelected( GtkWidget* combo, effects_t* varp)
 	}
 }
 
-//void effectTypeSelected( GtkWidget* combo, effects_t* effectp)
 void effectTypeSelected( GtkWidget* combo, effectStrip_t* stripp)
 {
 	gchar *eName; // selected effect name from the combo box entries.
-	//GList* list = effectp->effectList;
 	GList* list = stripp->effectInfo->effectList;
 
 	eName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
@@ -178,6 +166,7 @@ void ins1targetChnlSelected( GtkWidget* combo)
 		sendExc(4 , 0x03, 0x01, 0x0c, 0x40);
 	}
 }
+*/
 
 gboolean delete_event (void)
 {

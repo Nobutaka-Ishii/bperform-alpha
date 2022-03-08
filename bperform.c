@@ -11,7 +11,16 @@
 #include <alsa/seqmid.h>
 #include <alsa/seq_midi_event.h>
 #include <stdio.h>
-#include "bperform.h"
+#include <bperform.h>
+#include <ac1.h>
+#include <voicePage.h>
+#include <effectStrip.h>
+
+void pgmChange(int pn);
+void sendExc(guint length,...);
+void sendCc(guint cc, guint val);
+void init_synth(void);
+
 
 snd_seq_t *handle;
 int source; // source alsa-client id;
@@ -24,48 +33,9 @@ void initializeSelected(GtkWidget* menu)
 	sendExc(4, 0x4c, 0x00, 0x7f, 0x00);
 }
 
-void createEffectTypeComboBox(GtkWidget* comboBox, effects_t* effectsp)
-{
-	GList* list = effectsp->effectList;
-
-	do {
-		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox),\
-			((eachEffect_t*)(list->data))->name);
-		list = list->next;
-	} while( list );
-
-}
-
-gchar* chnlInsComboBoxEntries[] = {"Off", "1", "2", "3", "4", "AD"};
-gchar* chnlVarComboBoxEntries[] = {"Off", "1", "2", "3", "4", "AD", "System"};
-
-static void createInsTargetChnlComboBox(GtkWidget* comboBox)
-{
-	int itr;
-	for( itr = 0; itr < sizeof(chnlInsComboBoxEntries) / sizeof(*chnlInsComboBoxEntries) ; itr++){
-		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox),\
-			chnlInsComboBoxEntries[itr]);
-	}
-}
-
-static void createVarTargetComboBox(GtkWidget* comboBox)
-{
-	int itr;
-	for( itr = 0; itr < sizeof(chnlVarComboBoxEntries) / sizeof(*chnlVarComboBoxEntries) ; itr++){
-		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox),\
-			chnlVarComboBoxEntries[itr]);
-	}
-}
-
 int main(int argc, char** argv)
 {
-	FILE* fp;
-	effects_t var;
-	effects_t ins0;
-	effects_t ins1;
-	effectStrip_t varStrip;
 	effectStrip_t ins0strip;
-	effectStrip_t ins1strip;
 	ac1_t* ac1p;
 	voicePage_t* voicePage0p;
 	GList* midiTargets = NULL;
@@ -86,41 +56,12 @@ int main(int argc, char** argv)
 	GtkWidget* exceptMenu; // occupies button place
 	GtkWidget* ac1menu;
 
-
+	// voicePage notebook container. This cannot be made into an instance easily.
 	GtkWidget* voicePages;
 
 	// page1 entries
 	GtkWidget* voicePage1;
 	//GtkWidget* page1contents;
-
-
-	// system effect entries
-	GtkWidget* variationBox;
-	GtkWidget* varTargetChnl;
-	GtkWidget* varType;
-	GtkWidget* varScale;
-	GtkWidget* varLabel;
-	GtkWidget* varEditButton;
-	GtkWidget* varEditWindow;
-	GtkWidget* varEditWindowBox;
-
-	GtkWidget* insert0box;
-	GtkWidget* ins0type;
-	GtkWidget* ins0scale;
-	GtkWidget* ins0targetChnl;
-	GtkWidget* ins0label;
-	GtkWidget* ins0editButton;
-	GtkWidget* ins0editWindow;
-	GtkWidget* ins0editWindowBox;
-
-	GtkWidget* insert1box;
-	GtkWidget* ins1type;
-	GtkWidget* ins1scale;
-	GtkWidget* ins1targetChnl;
-	GtkWidget* ins1label;
-	GtkWidget* ins1editButton;
-	GtkWidget* ins1editWindow;
-	GtkWidget* ins1editWindowBox;
 
 	GtkWidget* choReturnBox;
 	GtkWidget* choRetScale;
@@ -165,19 +106,11 @@ int main(int argc, char** argv)
 
 	gtk_init(&argc, &argv);
 
-		// preparation for using glib list methods.
-	var.effectList = NULL;
-	ins0.effectList = NULL;
-	ins1.effectList = NULL;
 
 		// main window and layouts
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	base = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
-		// edit window and layouts
-	ins0editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	ins1editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	varEditWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 		// ac1 window and layouts instance generation
 	ac1p = ac1constr();
@@ -276,32 +209,6 @@ int main(int argc, char** argv)
 		voiceBox, GTK_WIDGET(gtk_label_new("Voice3") ) );
 */
 
-		// variation strip
-	variationBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	varEditWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	varLabel = gtk_label_new("Variation");
-	varEditButton = gtk_button_new_with_label("Edit");
-	varScale= gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
-	varTargetChnl = gtk_combo_box_text_new();
-	varType = gtk_combo_box_text_new();
-	var.range = varScale;
-	fp = fopen("./varList.txt", "r");
-	prepEffects(&var, fp);
-	fclose(fp);
-	createVarTargetComboBox(varTargetChnl);
-	createEffectTypeComboBox(varType, &var);
-		// var object construction
-	varStrip.insertBox = variationBox;
-	varStrip.insLabel = varLabel;
-	varStrip.insEditButton = varEditButton;
-	varStrip.insScale = varScale;
-	varStrip.insTargetChnl = varTargetChnl;
-	varStrip.effectInfo = &var;
-	gtk_container_add( GTK_CONTAINER(varEditWindow), varEditWindowBox);
-	varStrip.editWindow = varEditWindow;
-	varStrip.editWindowBox = varEditWindowBox; 
-	varStrip.whichstrip = VAR;
-
 	choReturnBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0); 
 	choRetLabel = gtk_label_new("Chorus");
 	choRetScale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
@@ -316,80 +223,7 @@ int main(int argc, char** argv)
 	revBlankBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_widget_set_size_request(revBlankBox, -1, 72); // width, height
 
-		// insert0 strip
-	insert0box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-		// edit subwindow related to ins0 strip
-	ins0editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	ins0label = gtk_label_new("Insert1");
-	ins0editButton = gtk_button_new_with_label("Edit");
-	ins0scale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1, 127, 1);
-		// create combobox entries with insertion effect type initialization
-	ins0targetChnl = gtk_combo_box_text_new();
-	ins0type = gtk_combo_box_text_new();
-	ins0.range = ins0scale;
-	fp = fopen("./insList.txt", "r");
-	prepEffects(&ins0, fp);
-	fclose(fp);
-		// create combobox entries of effect target channel
-	createInsTargetChnlComboBox(ins0targetChnl);
-	createEffectTypeComboBox(ins0type, &ins0);
-		// ins0 object construction
-	ins0strip.insertBox = insert0box;
-	ins0strip.insLabel = ins0label;
-	ins0strip.insEditButton = ins0editButton;
-	ins0strip.insScale = ins0scale;
-	ins0strip.insTargetChnl = ins0targetChnl;
-	ins0strip.effectInfo = &ins0;
-	gtk_container_add( GTK_CONTAINER(ins0editWindow), ins0editWindowBox);
-	ins0strip.editWindow = ins0editWindow;
-	ins0strip.editWindowBox = ins0editWindowBox; 
-	ins0strip.whichstrip = INS0;
 
-		// insert1 strip
-	insert1box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-		// edit subwindow related to ins1 strip
-	ins1editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	ins1label = gtk_label_new("Insert2");
-	ins1editButton = gtk_button_new_with_label("Edit");
-	ins1scale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1, 127, 1);
-
-	ins1targetChnl = gtk_combo_box_text_new();
-	ins1type = gtk_combo_box_text_new();
-	ins1.range = ins1scale;
-	fp = fopen("./insList.txt", "r");
-	prepEffects(&ins1, fp);
-	fclose(fp);
-		// create 
-	createInsTargetChnlComboBox(ins1targetChnl);
-	createEffectTypeComboBox(ins1type, &ins1);
-		//ins1 object construction
-	ins1strip.insertBox = insert0box;
-	ins1strip.insLabel = ins1label;
-	ins1strip.insEditButton = ins1editButton;
-	ins1strip.insScale = ins1scale;
-	ins1strip.insTargetChnl = ins1targetChnl;
-	ins1strip.effectInfo = &ins1;
-	gtk_container_add( GTK_CONTAINER(ins1editWindow), ins1editWindowBox);
-	ins1strip.editWindow = ins1editWindow;
-	ins1strip.editWindowBox = ins1editWindowBox; 
-	ins1strip.whichstrip = INS1;
-	
-		// mono/poly function
-/*
-	monoInst.checkBox = monoCheckBox;
-	monoInst.monoEnabled = 0; // poly mode in default.
-
-	portaInst.checkBox = portaCheckBox;
-	portaInst.portaEnabled = 0;
-	portaInst.scale = portaTimeScale;
-*/
-
-    gtk_scale_set_value_pos(GTK_SCALE(varScale), GTK_POS_BOTTOM);
-    gtk_range_set_inverted(GTK_RANGE(varScale), TRUE);
-    gtk_scale_set_value_pos(GTK_SCALE(ins0scale), GTK_POS_BOTTOM);
-    gtk_range_set_inverted(GTK_RANGE(ins0scale), TRUE);
-    gtk_scale_set_value_pos(GTK_SCALE(ins1scale), GTK_POS_BOTTOM);
-    gtk_range_set_inverted(GTK_RANGE(ins1scale), TRUE);
     gtk_scale_set_value_pos(GTK_SCALE(choRetScale), GTK_POS_BOTTOM);
     gtk_range_set_inverted(GTK_RANGE(choRetScale), TRUE);
     gtk_scale_set_value_pos(GTK_SCALE(revReturnScale), GTK_POS_BOTTOM);
@@ -416,41 +250,6 @@ int main(int argc, char** argv)
 	g_signal_connect(G_OBJECT(quit), "activate",\
 		G_CALLBACK(quit_button_pushed), NULL);
 
-		// variation effect strip
-	g_signal_connect(G_OBJECT(varType), "changed", \
-		G_CALLBACK(varTypeSelected), &var);
-	g_signal_connect(G_OBJECT(varScale), "value-changed", \
-		G_CALLBACK(varChanged), &var);
-	g_signal_connect(G_OBJECT(varTargetChnl), "changed", \
-		G_CALLBACK(varTargetChnlSelected), NULL);
-	g_signal_connect(G_OBJECT(varEditButton), "clicked", \
-		G_CALLBACK(varEdit), &varStrip);
-	g_signal_connect(G_OBJECT(varEditWindow), "delete_event", \
-		G_CALLBACK(closeEditWindow), &varStrip);
-
-		// insertion effect strips
-	g_signal_connect(G_OBJECT(ins0type), "changed", \
-		G_CALLBACK(effectTypeSelected), &ins0strip);
-	g_signal_connect(G_OBJECT(ins0scale), "value-changed", \
-		G_CALLBACK(ins0changed), &ins0);
-	g_signal_connect(G_OBJECT(ins0targetChnl), "changed", \
-		G_CALLBACK(ins0targetChnlSelected), NULL);
-	g_signal_connect(G_OBJECT(ins0editButton), "clicked", \
-		G_CALLBACK(insEdit), &ins0strip);
-	g_signal_connect(G_OBJECT(ins0editWindow), "delete_event", \
-		G_CALLBACK(closeEditWindow), &ins0strip);
-
-	g_signal_connect(G_OBJECT(ins1type), "changed", \
-		G_CALLBACK(effectTypeSelected), &ins1strip);
-	g_signal_connect(G_OBJECT(ins1scale), "value-changed", \
-		G_CALLBACK(ins1changed), &ins1);
-	g_signal_connect(G_OBJECT(ins1targetChnl), "changed", \
-		G_CALLBACK(ins1targetChnlSelected), NULL);
-	g_signal_connect(G_OBJECT(ins1editButton), "clicked", \
-		G_CALLBACK(insEdit), &ins1strip);
-	g_signal_connect(G_OBJECT(ins1editWindow), "delete_event", \
-		G_CALLBACK(closeEditWindow), &ins1strip);
-
 		// midi connection button actions
 	midiTargets = g_list_first(midiTargets);
 	while(midiTargets->next){
@@ -462,58 +261,6 @@ int main(int argc, char** argv)
 
 
 	// widgets boxing
-/*
-	gtk_box_pack_start( GTK_BOX(page0left), pListComboBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0left), volBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0left), panBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0left), attackBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0left), decayBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0left), releaseBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0left), monoCheckBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0left), portaCheckBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0left), portaTimeScale, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(volBox), volLabel, FALSE, FALSE, 0);
-	gtk_box_pack_start( GTK_BOX(volBox), volScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(panBox), panLabel, FALSE, FALSE, 0);
-	gtk_box_pack_start( GTK_BOX(panBox), panScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(attackBox), attackLabel, FALSE, FALSE, 0);
-	gtk_box_pack_start( GTK_BOX(attackBox), attackScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(decayBox), decayLabel, FALSE, FALSE, 0);
-	gtk_box_pack_start( GTK_BOX(decayBox), decayScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(releaseBox), releaseLabel, FALSE, FALSE, 0);
-	gtk_box_pack_start( GTK_BOX(releaseBox), releaseScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0right), choSendBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0right), revSendBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0contents), page0left, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(page0contents), page0right, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(choSendBox), choSendLabel, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(choSendBox), choSendScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(revSendBox), revSendLabel, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(revSendBox), revSendScale, TRUE, TRUE, 0);
-
-	gtk_container_add(GTK_CONTAINER(voicePage0), page0contents);
-*/
-
-
-
-	gtk_box_pack_start( GTK_BOX(variationBox), varLabel, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(variationBox), varTargetChnl, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(variationBox), varType, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(variationBox), varScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(variationBox), varEditButton, FALSE, TRUE, 0);
-
-
-	gtk_box_pack_start( GTK_BOX(insert0box), ins0label, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(insert0box), ins0targetChnl, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(insert0box), ins0type, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(insert0box), ins0scale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(insert0box), ins0editButton, FALSE, TRUE, 0);
-
-	gtk_box_pack_start( GTK_BOX(insert1box), ins1label, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(insert1box), ins1targetChnl, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(insert1box), ins1type, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(insert1box), ins1scale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(insert1box), ins1editButton, FALSE, TRUE, 0);
 
 	gtk_box_pack_start( GTK_BOX(choReturnBox), choRetLabel, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(choReturnBox), choBlankBox, FALSE, TRUE, 0);
@@ -526,9 +273,6 @@ int main(int argc, char** argv)
 	gtk_box_pack_start( GTK_BOX(revReturnBox), revEditButton, FALSE, TRUE, 0);
 
 	gtk_box_pack_start( GTK_BOX(exceptMenu), voicePages, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(exceptMenu), insert0box, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(exceptMenu), insert1box, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(exceptMenu), variationBox, TRUE, 0, 0);
 	gtk_box_pack_start( GTK_BOX(exceptMenu), choReturnBox, TRUE, 0, 0);
 	gtk_box_pack_start( GTK_BOX(exceptMenu), revReturnBox, TRUE, 0, 0);
 
@@ -541,3 +285,166 @@ int main(int argc, char** argv)
 	return 0;
 }
 
+void init_synth(void)
+{
+	// put variation effect block into insert effect mode.
+	sendExc(4, 0x02, 0x01, 0x5b, 64);
+}
+
+void sendExc(guint length,...)
+{
+	snd_seq_event_t ev;
+	va_list valist;
+	int itr;
+	char *data;
+
+	va_start(valist, length);
+
+	data = (char*)malloc( sizeof(guint)*(length + 5) );
+	data[0] = 0xf0;
+	data[1] = 0x43;
+	data[2] = 0x10;
+	data[3] = 0x4c;
+	data[length + 4]  = 0xf7;
+
+	for( itr=0; itr < length; itr++ ){
+		data[4 + itr] = va_arg(valist, guint);
+	}
+	va_end(valist);
+
+	snd_seq_ev_clear(&ev);
+	snd_seq_ev_set_sysex(&ev, 5+length, data);
+	snd_seq_ev_set_source(&ev, 0);
+	snd_seq_ev_set_direct(&ev);
+
+	ev.source.client = source;
+	ev.source.port = sport;
+	ev.dest.client = SND_SEQ_ADDRESS_SUBSCRIBERS;
+	ev.dest.port = tport;
+
+	snd_seq_event_output(handle, &ev);
+	snd_seq_drain_output(handle);
+}
+
+void sendCc(guint cc, guint val)
+{
+	snd_seq_event_t ev;
+	snd_seq_ev_clear(&ev);
+    snd_seq_ev_set_source(&ev, 0);
+    snd_seq_ev_set_direct(&ev);
+
+    ev.source.client = source;
+    ev.source.port = sport;
+    ev.dest.client = SND_SEQ_ADDRESS_SUBSCRIBERS;
+    ev.dest.port = tport;
+	ev.type = SND_SEQ_EVENT_CONTROLLER;
+
+	ev.data.control.channel = 0x0;
+	ev.data.control.param = cc;
+	ev.data.control.value = val;
+
+    snd_seq_event_output(handle, &ev);
+    snd_seq_drain_output(handle);
+}
+
+void pgmChange(int pn)
+{
+	snd_seq_event_t ev;
+    snd_seq_ev_clear(&ev);
+    snd_seq_ev_set_source(&ev, 0);
+    snd_seq_ev_set_direct(&ev);
+
+    ev.source.client = source;
+    ev.source.port = sport;
+    ev.dest.client = SND_SEQ_ADDRESS_SUBSCRIBERS;
+    ev.dest.port = tport;
+    ev.type = SND_SEQ_EVENT_PGMCHANGE;
+
+	ev.data.control.channel = 0x0; // MIDI channel
+	ev.data.control.param = 0x11; // MIDI Porgarm change ID
+	//ev.data.control.value = *((guint*)pn);
+	ev.data.control.value = pn;
+
+    snd_seq_event_output(handle, &ev);
+    snd_seq_drain_output(handle);
+}
+
+void stereoInitSelected(void)
+{
+	// set AD input as stereo signals : 11 00 00 01
+	sendExc(4, 0x11, 0x00, 0x00, 0x01);
+
+	// set AD1 input as line level signal : 10 00 00 01
+	sendExc(4, 0x10, 0x00, 0x00, 0x01);
+
+	//set AD2 input as line level signal : 10 01 00 01
+	//sendExc(4, 0x10, 0x01, 0x00, 0x01);
+
+	// set variation effect on the path of AD1/2
+	sendExc(4, 0x02, 0x01, 0x5b, 64);
+
+	// set send level into variation 100%
+	sendExc(4, 0x10, 0x00, 0x14, 127);
+
+	// set send level into directly chorus(effect1) 0%
+	sendExc(4, 0x10, 0x00, 0x12, 0);
+
+	// set variation to main path return level 0%
+	sendExc(4, 0x02, 0x01, 0x56, 0);
+
+	// AD input master volume 100%
+	sendExc(4, 0x10, 0x00, 0x0B, 127);
+
+	// Set effect1(reverb) send level zero.
+	sendExc(5, 0x2, 0x1, 0x0, 0x0, 0x0);
+
+	// Set var1effect through
+	sendExc(5, 0x2, 0x1, 0x40, 0x40, 0x0);
+}
+
+void monauralInitSelected(void)
+{
+	// set AD input as monaural signal: 11 00 00 00
+	sendExc(4, 0x11, 0x00, 0x00, 0x00);
+
+	// set AD1 input as line level signal : 10 00 00 01
+	sendExc(4, 0x10, 0x00, 0x00, 0x01);
+
+	//set AD2 input as line level signal : 10 01 00 01
+	//sendExc(4, 0x10, 0x01, 0x00, 0x01);
+
+	// set variation effect on the path(insertion mode) of AD1/2
+	sendExc(4, 0x02, 0x01, 0x5b, 64);
+
+	// set send level into variation 100%
+	sendExc(4, 0x10, 0x00, 0x14, 127);
+
+	// set send level into directly chorus(effect1) 0%
+	sendExc(4, 0x10, 0x00, 0x12, 0);
+
+	// set variation to main path return level 0%
+	sendExc(4, 0x02, 0x01, 0x56, 0);
+
+	// AD1 input master volume 100% on left channel
+	sendExc(4, 0x10, 0x00, 0x0B, 127);
+
+	// AD2 input master volume 0% on right channel
+	sendExc(4, 0x10, 0x01, 0x0B, 0);
+
+	// Set effect1(reverb) send level zero.
+	sendExc(5, 0x2, 0x1, 0x0, 0x0, 0x0);
+
+	// Set var1effect mode as through
+	sendExc(5, 0x2, 0x1, 0x40, 0x40, 0x0);
+}
+
+void targetMidiPortSelected( GtkWidget *label, midiTarget_t* midiTarget_p){
+	if( midiTarget_p->checked){
+		snd_seq_disconnect_to(handle, 0, midiTarget_p->clientId, midiTarget_p->portId);
+		midiTarget_p->checked = 0;
+	} else {
+		snd_seq_connect_to(handle, 0, midiTarget_p->clientId, midiTarget_p->portId);
+		midiTarget_p->checked = 1;
+	}
+}
+ 
