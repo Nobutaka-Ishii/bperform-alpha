@@ -3,7 +3,7 @@
 #include <splitline.h>
 #include <stdlib.h>
 
-char *targetChnl[] = {"Off,0x7f", "1,0x0", "2,0x1", "3,0x2", "4,0x3", "AD,0x64"};
+char *targetChnl[] = {"Off,0x7f", "1,0x0", "2,0x1", "3,0x2", "4,0x3", "AD,0x40"};
 
 void createEffectTypeComboBox(GtkWidget* comboBox, GList* list);
 void createTargetChnlComboBox(GtkWidget* comboBox);

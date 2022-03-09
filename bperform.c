@@ -21,7 +21,6 @@ void sendExc(guint length,...);
 void sendCc(guint cc, guint val);
 void init_synth(void);
 
-
 snd_seq_t *handle;
 int source; // source alsa-client id;
 int sport = 0; // app's source MIDI port number
@@ -31,6 +30,10 @@ void initializeSelected(GtkWidget* menu)
 {
 	// XG reset
 	sendExc(4, 0x4c, 0x00, 0x7f, 0x00);
+
+	// set variation effect on the path(insertion mode) of AD1/2
+	sendExc(4, 0x02, 0x01, 0x5a, 0x00);
+
 }
 
 int main(int argc, char** argv)
@@ -389,9 +392,6 @@ void stereoInitSelected(void)
 	//set AD2 input as line level signal : 10 01 00 01
 	//sendExc(4, 0x10, 0x01, 0x00, 0x01);
 
-	// set variation effect on the path of AD1/2
-	sendExc(4, 0x02, 0x01, 0x5b, 64);
-
 	// set send level into variation 100%
 	sendExc(4, 0x10, 0x00, 0x14, 127);
 
@@ -422,9 +422,6 @@ void monauralInitSelected(void)
 	//set AD2 input as line level signal : 10 01 00 01
 	//sendExc(4, 0x10, 0x01, 0x00, 0x01);
 
-	// set variation effect on the path(insertion mode) of AD1/2
-	sendExc(4, 0x02, 0x01, 0x5b, 64);
-
 	// set send level into variation 100%
 	sendExc(4, 0x10, 0x00, 0x14, 127);
 
@@ -441,10 +438,10 @@ void monauralInitSelected(void)
 	sendExc(4, 0x10, 0x01, 0x0B, 0);
 
 	// Set effect1(reverb) send level zero.
-	sendExc(5, 0x2, 0x1, 0x0, 0x0, 0x0);
+	sendExc(5, 0x2, 0x1, 0x0, 0x1, 0x0);
 
 	// Set var1effect mode as through
-	sendExc(5, 0x2, 0x1, 0x40, 0x40, 0x0);
+	sendExc(5, 0x2, 0x1, 0x40, 0x41, 0x0);
 }
 
 void targetMidiPortSelected( GtkWidget *label, midiTarget_t* midiTarget_p){
