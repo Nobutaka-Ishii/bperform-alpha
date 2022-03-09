@@ -1,6 +1,10 @@
 #include <bperform.h>
 #include <effectStrip.h>
 
+char *targetChnl[] = {"Off", "1", "2", "3", "4"};
+void createEffectTypeComboBox(GtkWidget* comboBox, GList* list);
+void createTargetChnlComboBox(GtkWidget* comboBox);
+
 effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 {
 	FILE* fp;
@@ -30,6 +34,7 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	es->effectList = prepEffects(fp);
 	fclose(fp);
 
+
 	es->effectBox = effectBox;
 	es->chnlComboBox = chnlComboBox;
 	es->typeComboBox = typeComboBox;
@@ -39,6 +44,10 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	es->editWindow = editWindowBox;
 	es->editWindowBox = editWindowBox;
 	strcpy(es->currentEffectType, "Through");
+
+	// create channel combo box entries
+	createTargetChnlComboBox(chnlComboBox);
+	createEffectTypeComboBox(typeComboBox, es->effectList);
 
 	gtk_container_add( GTK_CONTAINER(editWindow), editWindowBox);
 
@@ -71,9 +80,8 @@ void insChanged(GtkRange* range, effectStrip_t* strip)
 	}
 }
  
-void createEffectTypeComboBox(GtkWidget* comboBox, effectStrip_t* es)
+void createEffectTypeComboBox(GtkWidget* comboBox, GList* list)
 {
-	GList* list = es->effectList;
 	do {
 		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox),\
 			((eachEffect_t*)(list->data))->name);
@@ -81,12 +89,12 @@ void createEffectTypeComboBox(GtkWidget* comboBox, effectStrip_t* es)
 	} while( list );
 }
 
-static void createTargetChnlComboBox(GtkWidget* comboBox, effectStrip_t* es)
+void createTargetChnlComboBox(GtkWidget* comboBox)
 {
 	int itr;
-	for( itr = 0; itr < 4;  itr++)
-	{
-		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "hoge");
+
+	for(itr = 0; itr < sizeof(targetChnl)/(sizeof(targetChnl[0])); itr++){
+		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), targetChnl[itr]);
 	}
 }
- 
+

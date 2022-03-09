@@ -10,7 +10,6 @@
 GList* prepEffects(FILE* fp)
 {
 	GList* list;
-	effectStrip_t* es;
 	eachEffect_t* effectEntry;
 	char* line = NULL;
 	size_t n = 0;

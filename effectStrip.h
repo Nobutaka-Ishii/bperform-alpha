@@ -18,7 +18,7 @@ struct _eachEffect {
 typedef struct _eachEffect eachEffect_t;
 
 struct _effectStrip {
-	GtkWidget* effectBox;
+	GtkWidget* effectBox; // this is the one to be packed on the main window
 	GtkWidget* chnlComboBox;
 	GtkWidget* typeComboBox;
 	GtkWidget* scale;
