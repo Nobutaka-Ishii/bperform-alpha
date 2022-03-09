@@ -100,33 +100,34 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 {
 	gchar *effectName; // selected effect name from the combo box entries.
 	GList* list = es->effectList;
+	guint msb;
+	guint lsb;
 	effectName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
 	while( list ){
 		if( !strcmp(effectName, ((eachEffect_t*)(list->data))->name ) ) break;
 		list = list->next;
 	}
+	msb = ((eachEffect_t*)list->data)->msb;
+	lsb = ((eachEffect_t*)list->data)->lsb;
 
 	strcpy(es->currentEffectType, ((eachEffect_t*)(list->data))->name);
 
 	if( strcmp("null", ((eachEffect_t*)list->data)->param[9].label) ){
-		gtk_widget_set_sensitive(es->scale, TRUE);
+		//gtk_widget_set_sensitive(es->scale, TRUE);
 		gtk_range_set_range(GTK_RANGE(es->scale),
 			((eachEffect_t*)list->data)->param[9].rangeMin,
 			((eachEffect_t*)list->data)->param[9].rangeMax);
-
-		if( !strcmp("Insert1", es->stripName) ){
-			sendExc(5 , 0x03, 0x00, 0x00, ((eachEffect_t*)list->data)->msb,\
-				((eachEffect_t*)list->data)->lsb);
-		} else if( !strcmp("Insert2", es->stripName) ){
-			sendExc(5 , 0x03, 0x01, 0x00, ((eachEffect_t*)list->data)->msb,\
-				((eachEffect_t*)list->data)->lsb);
-		} else {
-			sendExc(5 , 0x02, 0x01, 0x40, ((eachEffect_t*)list->data)->msb,\
-				((eachEffect_t*)list->data)->lsb);
-		}
 	} else {
-		gtk_widget_set_sensitive(es->scale, FALSE);
-		gtk_range_set_range(GTK_RANGE(es->scale), 0, 0);
+		//gtk_widget_set_sensitive(es->scale, FALSE);
+		//gtk_range_set_range(GTK_RANGE(es->scale), 0, 0);
+	}
+
+	if( !strcmp("Insert1", es->stripName) ){
+		sendExc(5 , 0x03, 0x00, 0x00, msb, lsb);
+	} else if( !strcmp("Insert2", es->stripName) ){
+		sendExc(5 , 0x03, 0x01, 0x00, msb, lsb);
+	} else {
+		sendExc(5 , 0x02, 0x01, 0x40, msb, lsb);
 	}
 }
 
@@ -142,9 +143,21 @@ void effectScaleChanged(GtkRange* range, effectStrip_t* es)
 	strcpy(es->currentEffectType, ((eachEffect_t*)list->data)->name);
 	if( ((eachEffect_t*)list->data)->addrWidth == 2 ){
 		// this type of effect need 2-bytes width prameter specification.
-		sendExc(5, 0x03, 0x00, 0x42, 0x00, val);
+		if( !strcmp("Insert1", es->stripName) ){
+			sendExc(5, 0x03, 0x00, 0x42, 0x00, val);
+		} else if( !strcmp("Insert2", es->stripName) ){
+			sendExc(5, 0x03, 0x01, 0x42, 0x00, val);
+		} else {
+			sendExc(5 , 0x02, 0x01, 0x54, 0x00, val);
+		}
 	}else{
-		sendExc(4, 0x03, 0x00, 0x0B, val);
+		if( !strcmp("Insert1", es->stripName) ){
+			sendExc(4, 0x03, 0x00, 0x0B, val);
+		} else if( !strcmp("Insert2", es->stripName) ){
+			sendExc(4, 0x03, 0x01, 0x0B, val);
+		} else {
+			sendExc(4 , 0x02, 0x01, 0x0B, val);
+		}
 	}
 }
  

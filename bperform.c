@@ -37,6 +37,7 @@ int main(int argc, char** argv)
 {
 	effectStrip_t* ins0strip;
 	effectStrip_t* ins1strip;
+	effectStrip_t* varStrip;
 	ac1_t* ac1p;
 	voicePage_t* voicePage0p;
 	GList* midiTargets = NULL;
@@ -120,6 +121,7 @@ int main(int argc, char** argv)
 		// insert effect strip construction
 	ins0strip = effectStripConstr("Insert1", "./insList.txt");
 	ins1strip = effectStripConstr("Insert2", "./insList.txt");
+	varStrip = effectStripConstr("Variation", "./varList.txt");
 
 	// create menubar bar
 	menubar = gtk_menu_bar_new();
@@ -279,6 +281,7 @@ int main(int argc, char** argv)
 	gtk_box_pack_start( GTK_BOX(exceptMenu), voicePages, TRUE, 0, 0);
 	gtk_box_pack_start( GTK_BOX(exceptMenu), ins0strip->effectBox, TRUE, 0, 0);
 	gtk_box_pack_start( GTK_BOX(exceptMenu), ins1strip->effectBox, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(exceptMenu), varStrip->effectBox, TRUE, 0, 0);
 	gtk_box_pack_start( GTK_BOX(exceptMenu), choReturnBox, TRUE, 0, 0);
 	gtk_box_pack_start( GTK_BOX(exceptMenu), revReturnBox, TRUE, 0, 0);
 
