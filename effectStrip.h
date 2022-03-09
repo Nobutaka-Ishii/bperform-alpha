@@ -27,7 +27,9 @@ struct _effectStrip {
 	GtkWidget* editWindow;
 	GtkWidget* editWindowBox;
 	GList* effectList;
+	gchar stripName[16]; // effect strip itselves name i.e Insert1, Insert2, Variation
 	gchar currentEffectType[EFFECT_NAME_LENGTH];
+	guint currentTargetChnl;
 
 	struct _effectStrip* (*effectStripConstr)(void);
 };
