@@ -1,4 +1,5 @@
 #include <bperform.h>
+#include <ac1.h>
 
 ac1_t* ac1constr(void)
 {

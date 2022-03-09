@@ -1,4 +1,7 @@
 #include <bperform.h>
+#include <voicePage.h>
+#include <splitline.h>
+
 #define TONE_NAME_LENGTH 16
 
 voicePage_t* voicePageConstr(void)

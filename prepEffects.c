@@ -1,14 +1,15 @@
 #include <string.h>
-#include "bperform.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <glib.h>
+#include <effectStrip.h>
+#include <splitline.h>
 
-#define EFFECT_NAME_LENGTH 64
 #define PARAM_LABEL_NAME_LENGTH 32
 
-void prepEffects(effects_t* effects, FILE* fp)
+GList* prepEffects(FILE* fp)
 {
+	GList* list;
 	eachEffect_t* effectEntry;
 	char* line = NULL;
 	size_t n = 0;
@@ -23,7 +24,7 @@ void prepEffects(effects_t* effects, FILE* fp)
 		effectEntry = (eachEffect_t*)malloc(sizeof(eachEffect_t));
 		memset(effectEntry, 0, sizeof(eachEffect_t));
 
-		effects->effectList = g_list_append(effects->effectList, effectEntry);
+		list = g_list_append(list, effectEntry);
 
 		eachEffect = splitline(line, '\t', &fields);
 		for(itr=0; itr < 18; itr++){ // effect name, msb:lsb:width field, and 1st to 16th parameter.
@@ -53,5 +54,6 @@ void prepEffects(effects_t* effects, FILE* fp)
 			}			
 		}
 	}
+	return list;
 }
 
