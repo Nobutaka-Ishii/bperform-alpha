@@ -41,6 +41,8 @@ int main(int argc, char** argv)
 	effectStrip_t* ins0strip;
 	effectStrip_t* ins1strip;
 	effectStrip_t* varStrip;
+	effectStrip_t* choStrip;
+	effectStrip_t* revStrip;
 	ac1_t* ac1p;
 	voicePage_t* voicePage0p;
 	voicePage_t* adPage;
@@ -68,18 +70,6 @@ int main(int argc, char** argv)
 	// page1 entries
 	GtkWidget* voicePage1;
 	//GtkWidget* page1contents;
-
-	GtkWidget* choReturnBox;
-	GtkWidget* choRetScale;
-	GtkWidget* choRetLabel;
-	GtkWidget* choEditButton;
-	GtkWidget* choBlankBox;
-
-	GtkWidget* revReturnBox;
-	GtkWidget* revReturnScale;
-	GtkWidget* revReturnLabel;
-	GtkWidget* revEditButton;
-	GtkWidget* revBlankBox;
 
 	GtkWidget* help;
 	GtkWidget* helpDownlist;
@@ -125,6 +115,8 @@ int main(int argc, char** argv)
 	ins0strip = effectStripConstr("Insert1", "./insList.txt");
 	ins1strip = effectStripConstr("Insert2", "./insList.txt");
 	varStrip = effectStripConstr("Variation", "./varList.txt");
+	choStrip = effectStripConstr("Chorus", "./choList.txt");
+	revStrip = effectStripConstr("Reverb", "./revList.txt");
 
 	// create menubar bar
 	menubar = gtk_menu_bar_new();
@@ -216,27 +208,6 @@ int main(int argc, char** argv)
 		voiceBox, GTK_WIDGET(gtk_label_new("Voice3") ) );
 */
 
-	choReturnBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0); 
-	choRetLabel = gtk_label_new("Chorus");
-	choRetScale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
-	choEditButton = gtk_button_new_with_label("Edit");
-	choBlankBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_widget_set_size_request(choBlankBox, -1, 72); // width, height
-
-	revReturnBox =  gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	revReturnLabel = gtk_label_new("Reverb");
-	revReturnScale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
-	revEditButton = gtk_button_new_with_label("Edit");
-	revBlankBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_widget_set_size_request(revBlankBox, -1, 72); // width, height
-
-
-    gtk_scale_set_value_pos(GTK_SCALE(choRetScale), GTK_POS_BOTTOM);
-    gtk_range_set_inverted(GTK_RANGE(choRetScale), TRUE);
-    gtk_scale_set_value_pos(GTK_SCALE(revReturnScale), GTK_POS_BOTTOM);
-    gtk_range_set_inverted(GTK_RANGE(revReturnScale), TRUE);
-
-
 	// callback function settings
 
 		// window events by window manager
@@ -265,22 +236,12 @@ int main(int argc, char** argv)
 
 	// widgets boxing
 
-	gtk_box_pack_start( GTK_BOX(choReturnBox), choRetLabel, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(choReturnBox), choBlankBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(choReturnBox), choRetScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(choReturnBox), choEditButton, FALSE, TRUE, 0);
-
-	gtk_box_pack_start( GTK_BOX(revReturnBox), revReturnLabel, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(revReturnBox), revBlankBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(revReturnBox), revReturnScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(revReturnBox), revEditButton, FALSE, TRUE, 0);
-
 	gtk_box_pack_start( GTK_BOX(exceptMenu), voicePages, TRUE, 0, 0);
 	gtk_box_pack_start( GTK_BOX(exceptMenu), ins0strip->effectBox, TRUE, 0, 0);
 	gtk_box_pack_start( GTK_BOX(exceptMenu), ins1strip->effectBox, TRUE, 0, 0);
 	gtk_box_pack_start( GTK_BOX(exceptMenu), varStrip->effectBox, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(exceptMenu), choReturnBox, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(exceptMenu), revReturnBox, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(exceptMenu), choStrip->effectBox, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(exceptMenu), revStrip->effectBox, TRUE, 0, 0);
 
 	gtk_box_pack_start( GTK_BOX(base), menubar, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(base), exceptMenu, TRUE, TRUE, 0);

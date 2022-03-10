@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 char *targetChnl[] = {"Off,0x7f", "1,0x0", "2,0x1", "3,0x2", "4,0x3", "AD,0x40"};
+enum {INSERT, SYSTEM};
 
 void createEffectTypeComboBox(GtkWidget* comboBox, GList* list);
 void createTargetChnlComboBox(GtkWidget* comboBox);
@@ -23,6 +24,15 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	GtkWidget* editButton;
 	GtkWidget* editWindow;
 	GtkWidget* editWindowBox;
+	int stripType;
+
+	// determine the effect group.
+	// Insert1, Insert2, Variation : INSERT
+	// Chorus, Reverb : SYSTEM
+	stripType = INSERT;
+	if( (!strcmp("Chorus", stripName)) || (!strcmp("Reverb", stripName)) ){
+		stripType = SYSTEM;
+	}
 
 	es = (effectStrip_t*)malloc(sizeof(effectStrip_t));
 	memset(es, 0, sizeof(effectStrip_t));
@@ -30,9 +40,22 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	strcpy(es->stripName, stripName);
 
 	effectBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	chnlComboBox = gtk_combo_box_text_new();
+	if( stripType == SYSTEM ){
+		//chnlComboBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+		chnlComboBox = gtk_label_new("Return Level");
+		gtk_widget_set_size_request(chnlComboBox, -1, 36); // width, height
+	} else {
+		chnlComboBox = gtk_combo_box_text_new();
+	}
 	typeComboBox = gtk_combo_box_text_new();
-	scale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1, 127, 1);
+	if( stripType == INSERT ){
+		scale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1, 127, 1);
+			// 1 is min value hard code for "Through" entry.
+		gtk_range_set_value( GTK_RANGE(scale), 1);
+	} else {
+		scale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
+		gtk_range_set_value( GTK_RANGE(scale), 0);
+	}
 	label = gtk_label_new(stripName);
 	editButton = gtk_button_new_with_label("Edit");
 	editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -41,7 +64,6 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	fp = fopen(path, "r");
 	es->effectList = prepEffects(fp);
 	fclose(fp);
-
 
 	es->effectBox = effectBox;
 	es->chnlComboBox = chnlComboBox;
@@ -53,13 +75,16 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	es->editWindowBox = editWindowBox;
 	strcpy(es->currentEffectType, "Through");
 	es->currentTargetChnl = 0x7f; // targetChnl[0] = {"Off,0x7f"} 's entry.
-	gtk_range_set_value( GTK_RANGE(es->scale), 1); // 1 is min value hard code for "Through" entry.
 
 	// create channel combo box entries
-	createTargetChnlComboBox(chnlComboBox);
+
+	if( stripType == INSERT ){
+		createTargetChnlComboBox(chnlComboBox);
 		gtk_combo_box_set_active( GTK_COMBO_BOX(chnlComboBox), 0);
+	}
+
 	createEffectTypeComboBox(typeComboBox, es->effectList);
-		gtk_combo_box_set_active( GTK_COMBO_BOX(typeComboBox), 0);
+	gtk_combo_box_set_active( GTK_COMBO_BOX(typeComboBox), 0);
 
 	gtk_container_add( GTK_CONTAINER(editWindow), editWindowBox);
 
@@ -73,7 +98,8 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	gtk_box_pack_start( GTK_BOX(effectBox), editButton, FALSE, TRUE, 0);
 
 	g_signal_connect(G_OBJECT(es->scale), "value-changed", G_CALLBACK(effectScaleChanged), es);
-	g_signal_connect(G_OBJECT(es->chnlComboBox), "changed", G_CALLBACK(chnlChanged), es);
+	if( stripType == INSERT ) g_signal_connect(G_OBJECT(es->chnlComboBox),\
+		"changed", G_CALLBACK(chnlChanged), es);
 	g_signal_connect(G_OBJECT(es->typeComboBox), "changed", G_CALLBACK(effectTypeChanged), es);
 
 	return es;
@@ -106,6 +132,13 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 	GList* list = es->effectList;
 	guint msb;
 	guint lsb;
+	int stripType;
+
+	stripType = INSERT;
+	if( (!strcmp("Chorus", es->stripName)) || (!strcmp("Reverb", es->stripName)) ){
+		stripType = SYSTEM;
+	}
+
 	effectName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
 	while( list ){
 		if( !strcmp(effectName, ((eachEffect_t*)(list->data))->name ) ) break;
@@ -116,23 +149,32 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 
 	strcpy(es->currentEffectType, ((eachEffect_t*)(list->data))->name);
 
-	if( strcmp("null", ((eachEffect_t*)list->data)->param[9].label) ){
-		//gtk_widget_set_sensitive(es->scale, TRUE);
-		gtk_range_set_range(GTK_RANGE(es->scale),
-			((eachEffect_t*)list->data)->param[9].rangeMin,
-			((eachEffect_t*)list->data)->param[9].rangeMax);
+	if( stripType == INSERT ){
+		if( strcmp("null", ((eachEffect_t*)list->data)->param[9].label) ){
+			//gtk_widget_set_sensitive(es->scale, TRUE);
+			gtk_range_set_range(GTK_RANGE(es->scale),
+				((eachEffect_t*)list->data)->param[9].rangeMin,
+				((eachEffect_t*)list->data)->param[9].rangeMax);
+		} else {
+			//gtk_widget_set_sensitive(es->scale, FALSE);
+			//gtk_range_set_range(GTK_RANGE(es->scale), 0, 0);
+		}
 	} else {
-		//gtk_widget_set_sensitive(es->scale, FALSE);
-		//gtk_range_set_range(GTK_RANGE(es->scale), 0, 0);
+			// effect return value range is always between 0 and 0x7f by MU100's hw spec.
+			gtk_range_set_range(GTK_RANGE(es->scale), 0, 0x7f);
 	}
 
 	if( !strcmp("Insert1", es->stripName) ){
 		sendExc(5 , 0x03, 0x00, 0x00, msb, lsb);
 	} else if( !strcmp("Insert2", es->stripName) ){
 		sendExc(5 , 0x03, 0x01, 0x00, msb, lsb);
-	} else {
+	} else if( !strcmp("Variation", es->stripName) ){
 		sendExc(5 , 0x02, 0x01, 0x40, msb, lsb);
-	}
+	} else if( !strcmp("Chorus", es->stripName) ){
+		sendExc(5 , 0x02, 0x01, 0x20, msb, lsb);
+	} else { // system reverb
+		sendExc(5 , 0x02, 0x01, 0x00, msb, lsb);
+	}	
 }
 
 void effectScaleChanged(GtkRange* range, effectStrip_t* es)
@@ -152,6 +194,7 @@ void effectScaleChanged(GtkRange* range, effectStrip_t* es)
 		} else if( !strcmp("Insert2", es->stripName) ){
 			sendExc(5, 0x03, 0x01, 0x42, 0x00, val);
 		} else {
+			// Variation block used as insertion effect. Always 2-byte width.
 			sendExc(5 , 0x02, 0x01, 0x54, 0x00, val);
 		}
 	}else{
@@ -159,8 +202,10 @@ void effectScaleChanged(GtkRange* range, effectStrip_t* es)
 			sendExc(4, 0x03, 0x00, 0x0B, val);
 		} else if( !strcmp("Insert2", es->stripName) ){
 			sendExc(4, 0x03, 0x01, 0x0B, val);
+		} else if( !strcmp("Chorus", es->stripName) ){
+			sendExc(4 , 0x02, 0x01, 0x2C, val); // system chorus return level
 		} else {
-			sendExc(4 , 0x02, 0x01, 0x0B, val);
+			sendExc(4 , 0x02, 0x01, 0x0C, val); // system reverb return level
 		}
 	}
 }
