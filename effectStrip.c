@@ -52,10 +52,14 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	es->editWindow = editWindowBox;
 	es->editWindowBox = editWindowBox;
 	strcpy(es->currentEffectType, "Through");
+	es->currentTargetChnl = 0x7f; // targetChnl[0] = {"Off,0x7f"} 's entry.
+	gtk_range_set_value( GTK_RANGE(es->scale), 1); // 1 is min value hard code for "Through" entry.
 
 	// create channel combo box entries
 	createTargetChnlComboBox(chnlComboBox);
+		gtk_combo_box_set_active( GTK_COMBO_BOX(chnlComboBox), 0);
 	createEffectTypeComboBox(typeComboBox, es->effectList);
+		gtk_combo_box_set_active( GTK_COMBO_BOX(typeComboBox), 0);
 
 	gtk_container_add( GTK_CONTAINER(editWindow), editWindowBox);
 

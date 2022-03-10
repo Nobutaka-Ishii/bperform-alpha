@@ -43,6 +43,7 @@ int main(int argc, char** argv)
 	effectStrip_t* varStrip;
 	ac1_t* ac1p;
 	voicePage_t* voicePage0p;
+	voicePage_t* adPage;
 	GList* midiTargets = NULL;
 
 		// variables for alsa connection destination port
@@ -88,8 +89,6 @@ int main(int argc, char** argv)
 	GtkWidget* init;
 	GtkWidget* initDownlist;
 	GtkWidget* initialize;
-	GtkWidget* monauralInit;
-	GtkWidget* stereoInit; 
 
 	source = snd_seq_open( &handle, "default", SND_SEQ_OPEN_DUPLEX, 0 );
 	if( source < 0 ){
@@ -119,7 +118,8 @@ int main(int argc, char** argv)
 
 		// ac1 window and layouts instance generation
 	ac1p = ac1constr();
-	voicePage0p = voicePageConstr();
+	voicePage0p = voicePageConstr(SYNTH);
+	adPage = voicePageConstr(AD);
 
 		// insert effect strip construction
 	ins0strip = effectStripConstr("Insert1", "./insList.txt");
@@ -132,8 +132,6 @@ int main(int argc, char** argv)
 	initDownlist = gtk_menu_new();
 	init = gtk_menu_item_new_with_label("Initialize");
 	initialize = gtk_menu_item_new_with_label("MU100B init");
-	monauralInit = gtk_menu_item_new_with_label("Mono AD init");
-	stereoInit = gtk_menu_item_new_with_label("Stereo AD init");
 	ac1menu = gtk_menu_item_new_with_label("AC1 config");
 
 	connectDownlist = gtk_menu_new();
@@ -146,8 +144,6 @@ int main(int argc, char** argv)
 	gtk_menu_shell_append(GTK_MENU_SHELL(menubar), init);
 	gtk_menu_item_set_submenu(GTK_MENU_ITEM(init), initDownlist);
 	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), initialize);
-	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), monauralInit);
-	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), stereoInit);
 	gtk_menu_shell_append(GTK_MENU_SHELL(initDownlist), ac1menu);
 	gtk_menu_shell_append(GTK_MENU_SHELL(menubar), connect);
 	gtk_menu_item_set_submenu(GTK_MENU_ITEM(connect), connectDownlist);
@@ -207,9 +203,11 @@ int main(int argc, char** argv)
 
 	voicePages = gtk_notebook_new();
 	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
-		voicePage0p->voicePage , GTK_WIDGET(gtk_label_new("Voice0") ) );
+		voicePage0p->voicePage , GTK_WIDGET(gtk_label_new("Voice1") ) );
 	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
-		voicePage1, GTK_WIDGET(gtk_label_new("Voice1") ) );
+		voicePage1, GTK_WIDGET(gtk_label_new("Voice2") ) );
+	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
+		adPage->voicePage, GTK_WIDGET(gtk_label_new("AD input") ) );
 
 /*
 	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
@@ -252,10 +250,6 @@ int main(int argc, char** argv)
 		// menu selection
 	g_signal_connect(G_OBJECT(initialize), "activate",\
 		G_CALLBACK(initializeSelected), NULL);
-	g_signal_connect(G_OBJECT(monauralInit), "activate",\
-		G_CALLBACK(monauralInitSelected), NULL);
-	g_signal_connect(G_OBJECT(stereoInit), "activate",\
-		G_CALLBACK(stereoInitSelected), NULL);
 	g_signal_connect(G_OBJECT(quit), "activate",\
 		G_CALLBACK(quit_button_pushed), NULL);
 
@@ -379,69 +373,6 @@ void pgmChange(int pn)
 
     snd_seq_event_output(handle, &ev);
     snd_seq_drain_output(handle);
-}
-
-void stereoInitSelected(void)
-{
-	// set AD input as stereo signals : 11 00 00 01
-	sendExc(4, 0x11, 0x00, 0x00, 0x01);
-
-	// set AD1 input as line level signal : 10 00 00 01
-	sendExc(4, 0x10, 0x00, 0x00, 0x01);
-
-	//set AD2 input as line level signal : 10 01 00 01
-	//sendExc(4, 0x10, 0x01, 0x00, 0x01);
-
-	// set send level into variation 100%
-	sendExc(4, 0x10, 0x00, 0x14, 127);
-
-	// set send level into directly chorus(effect1) 0%
-	sendExc(4, 0x10, 0x00, 0x12, 0);
-
-	// set variation to main path return level 0%
-	sendExc(4, 0x02, 0x01, 0x56, 0);
-
-	// AD input master volume 100%
-	sendExc(4, 0x10, 0x00, 0x0B, 127);
-
-	// Set effect1(reverb) send level zero.
-	sendExc(5, 0x2, 0x1, 0x0, 0x0, 0x0);
-
-	// Set var1effect through
-	sendExc(5, 0x2, 0x1, 0x40, 0x40, 0x0);
-}
-
-void monauralInitSelected(void)
-{
-	// set AD input as monaural signal: 11 00 00 00
-	sendExc(4, 0x11, 0x00, 0x00, 0x00);
-
-	// set AD1 input as line level signal : 10 00 00 01
-	sendExc(4, 0x10, 0x00, 0x00, 0x01);
-
-	//set AD2 input as line level signal : 10 01 00 01
-	//sendExc(4, 0x10, 0x01, 0x00, 0x01);
-
-	// set send level into variation 100%
-	sendExc(4, 0x10, 0x00, 0x14, 127);
-
-	// set send level into directly chorus(effect1) 0%
-	sendExc(4, 0x10, 0x00, 0x12, 0);
-
-	// set variation to main path return level 0%
-	sendExc(4, 0x02, 0x01, 0x56, 0);
-
-	// AD1 input master volume 100% on left channel
-	sendExc(4, 0x10, 0x00, 0x0B, 127);
-
-	// AD2 input master volume 0% on right channel
-	sendExc(4, 0x10, 0x01, 0x0B, 0);
-
-	// Set effect1(reverb) send level zero.
-	sendExc(5, 0x2, 0x1, 0x0, 0x1, 0x0);
-
-	// Set var1effect mode as through
-	sendExc(5, 0x2, 0x1, 0x40, 0x41, 0x0);
 }
 
 void targetMidiPortSelected( GtkWidget *label, midiTarget_t* midiTarget_p){

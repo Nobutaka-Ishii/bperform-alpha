@@ -4,7 +4,10 @@
 
 #define TONE_NAME_LENGTH 16
 
-voicePage_t* voicePageConstr(void)
+const int initialAdVol = 0x00;
+const int initialPanVal = 0x40;
+
+voicePage_t* voicePageConstr(int pageType)
 {
 	voicePage_t* vpp;
 	FILE* fp;
@@ -79,18 +82,38 @@ voicePage_t* voicePageConstr(void)
 		fclose(fp);
 	}
 	
-	while( toneEntries ) {
-		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(prgListComboBox),\
-			((eachTone_t*)(toneEntries->data))->name );
-		if( !(toneEntries->next) ) break;
-		toneEntries = toneEntries->next; 
+	if( pageType == SYNTH ){
+		while( toneEntries ) {
+			gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(prgListComboBox),\
+				((eachTone_t*)(toneEntries->data))->name );
+			if( !(toneEntries->next) ) break;
+			toneEntries = toneEntries->next; 
+		}
+	} else {
+		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(prgListComboBox), "Mono");
+		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(prgListComboBox), "Stereo");
 	}
 
-	vpp->vol = 0x7f;
-	vpp->pan = 0x40;
+	vpp->pageType = pageType;
+		// initial value config
+	if( pageType == SYNTH ) vpp->vol = 0x7f;
+	else  vpp->vol = 0x0;
+	vpp->pan = 0x40; // value for being on the center position
+	vpp->cho = 0;
+	vpp->rev = 0;
 	vpp->monoEnabled = 0;
 	vpp->portaEnabled = 0;
 	vpp->portaTime = 0;
+	vpp->monoStereo = 0;
+
+		// making GUI instances following initial values
+	gtk_range_set_value( GTK_RANGE(volScale), vpp->vol);
+	gtk_range_set_value( GTK_RANGE(panScale), vpp->pan - 64);
+	gtk_range_set_value( GTK_RANGE(revSendScale), vpp->rev);
+	gtk_range_set_value( GTK_RANGE(choSendScale), vpp->cho);
+	gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(portaCheckBox), FALSE);
+	gtk_range_set_value( GTK_RANGE(portaTimeScale), 0x7f);
+	gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(monoCheckBox), FALSE);
 
 	vpp->voicePage = voicePage;
 	vpp->pageContents = pageContents;
@@ -140,22 +163,25 @@ voicePage_t* voicePageConstr(void)
 	gtk_box_pack_start( GTK_BOX(pageLeft), prgListComboBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(pageLeft), volBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(pageLeft), panBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(pageLeft), attackBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(pageLeft), releaseBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(pageLeft), decayBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(pageLeft), monoCheckBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(pageLeft), portaCheckBox, FALSE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(pageLeft), portaTimeScale, FALSE, TRUE, 0);
+
 	gtk_box_pack_start( GTK_BOX(volBox), volLabel, FALSE, FALSE, 0);
 	gtk_box_pack_start( GTK_BOX(volBox), volScale, TRUE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(panBox), panLabel, FALSE, FALSE, 0);
 	gtk_box_pack_start( GTK_BOX(panBox), panScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(attackBox), attackLabel, FALSE, FALSE, 0);
-	gtk_box_pack_start( GTK_BOX(attackBox), attackScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(decayBox), decayLabel, FALSE, FALSE, 0);
-	gtk_box_pack_start( GTK_BOX(decayBox), decayScale, TRUE, TRUE, 0);
-	gtk_box_pack_start( GTK_BOX(releaseBox), releaseLabel, FALSE, FALSE, 0);
-	gtk_box_pack_start( GTK_BOX(releaseBox), releaseScale, TRUE, TRUE, 0);
+	if( pageType == SYNTH ){
+		gtk_box_pack_start( GTK_BOX(pageLeft), attackBox, FALSE, TRUE, 0);
+		gtk_box_pack_start( GTK_BOX(pageLeft), releaseBox, FALSE, TRUE, 0);
+		gtk_box_pack_start( GTK_BOX(pageLeft), decayBox, FALSE, TRUE, 0);
+		gtk_box_pack_start( GTK_BOX(pageLeft), monoCheckBox, FALSE, TRUE, 0);
+		gtk_box_pack_start( GTK_BOX(pageLeft), portaCheckBox, FALSE, TRUE, 0);
+		gtk_box_pack_start( GTK_BOX(pageLeft), portaTimeScale, FALSE, TRUE, 0);
+		gtk_box_pack_start( GTK_BOX(attackBox), attackLabel, FALSE, FALSE, 0);
+		gtk_box_pack_start( GTK_BOX(attackBox), attackScale, TRUE, TRUE, 0);
+		gtk_box_pack_start( GTK_BOX(decayBox), decayLabel, FALSE, FALSE, 0);
+		gtk_box_pack_start( GTK_BOX(decayBox), decayScale, TRUE, TRUE, 0);
+		gtk_box_pack_start( GTK_BOX(releaseBox), releaseLabel, FALSE, FALSE, 0);
+		gtk_box_pack_start( GTK_BOX(releaseBox), releaseScale, TRUE, TRUE, 0);
+	}
 	gtk_box_pack_start( GTK_BOX(pageRight), choSendBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(pageRight), revSendBox, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(choSendBox), choSendLabel, FALSE, TRUE, 0);
@@ -170,18 +196,36 @@ voicePage_t* voicePageConstr(void)
 //	signals
 	g_signal_connect(G_OBJECT(volScale), "value-changed", G_CALLBACK(vpp->volChanged), vpp);
 	g_signal_connect(G_OBJECT(panScale), "value-changed", G_CALLBACK(vpp->panChanged), vpp);
-	g_signal_connect(G_OBJECT(attackScale), "value-changed", G_CALLBACK(vpp->attackChanged), vpp);
-	g_signal_connect(G_OBJECT(decayScale), "value-changed", G_CALLBACK(vpp->decayChanged), vpp);
-	g_signal_connect(G_OBJECT(releaseScale), "value-changed", G_CALLBACK(vpp->releaseChanged), vpp);
-	g_signal_connect(G_OBJECT(revSendScale), "value-changed", G_CALLBACK(vpp->revSend), vpp);
-	g_signal_connect(G_OBJECT(choSendScale), "value-changed", G_CALLBACK(vpp->choSend), vpp);
-	g_signal_connect(G_OBJECT(portaCheckBox), "clicked", G_CALLBACK(vpp->portaCheckBoxChecked), vpp);
-	g_signal_connect(G_OBJECT(monoCheckBox), "clicked", G_CALLBACK(vpp->monoCheckBoxChecked), vpp); 
-	g_signal_connect(G_OBJECT(portaTimeScale), "value-changed", G_CALLBACK(vpp->portaTimeChanged), vpp);
+	g_signal_connect(G_OBJECT(revSendScale), "value-changed",\
+		G_CALLBACK(vpp->revSend), vpp);
+	g_signal_connect(G_OBJECT(choSendScale), "value-changed",\
+		G_CALLBACK(vpp->choSend), vpp);
 
+	if( pageType == SYNTH ){
+		g_signal_connect(G_OBJECT(attackScale), "value-changed",\
+			G_CALLBACK(vpp->attackChanged), vpp);
+		g_signal_connect(G_OBJECT(decayScale), "value-changed",\
+			G_CALLBACK(vpp->decayChanged), vpp);
+		g_signal_connect(G_OBJECT(releaseScale), "value-changed",\
+			G_CALLBACK(vpp->releaseChanged), vpp);
+		g_signal_connect(G_OBJECT(portaCheckBox), "clicked",\
+			G_CALLBACK(vpp->portaCheckBoxChecked), vpp);
+		g_signal_connect(G_OBJECT(monoCheckBox), "clicked",\
+			G_CALLBACK(vpp->monoCheckBoxChecked), vpp); 
+		g_signal_connect(G_OBJECT(portaTimeScale), "value-changed",\
+			G_CALLBACK(vpp->portaTimeChanged), vpp);
+	}
+
+	//toneEntries = g_list_first(toneEntries);
 	// combobox program select
-	toneEntries = g_list_first(toneEntries);
-	g_signal_connect(G_OBJECT(prgListComboBox), "changed", G_CALLBACK(vpp->programSelected), vpp );
+	if ( pageType == SYNTH) {
+		g_signal_connect(G_OBJECT(prgListComboBox), "changed",\
+			G_CALLBACK(vpp->programSelected), vpp );
+	} else {
+		gtk_combo_box_set_active( GTK_COMBO_BOX(prgListComboBox), 0); 
+		g_signal_connect(G_OBJECT(prgListComboBox), "changed",\
+			G_CALLBACK(monoStereoSelected), vpp );
+	}
 
 	return vpp;
 }
@@ -263,29 +307,46 @@ void monoCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* vpp)
 void volChanged(GtkRange* range, voicePage_t* vpp)
 {
 	guint val = gtk_range_get_value(range);
-	sendCc(7, val);
+	if( vpp->pageType == SYNTH ){
+		sendCc(7, val);
+	} else {
+		sendExc(4, 0x10, 0x00,  0x0B, val);
+	}
 	vpp->vol = val;
 }
 
 void panChanged(GtkRange* range, voicePage_t* vpp)
 {
 	guint val = gtk_range_get_value(range) + 64;
-	sendCc(10, val);
+	if( vpp->pageType == SYNTH ){
+		sendCc(10, val);
+	} else {
+		sendExc(4, 0x10, 0x00,  0x0E, val);
+	}
 	vpp->pan = val;
 }
-
 
 void revSend(GtkRange* range, voicePage_t* vpp)
 {
 	guint val = gtk_range_get_value(range);
-	sendCc(91, val);
+	if( vpp->pageType == SYNTH ){
+		sendCc(91, val);
+	} else {
+		sendExc(4, 0x10, 0x00,  0x13, val);
+	}
+
 	vpp->rev = val;
 }
 
 void choSend(GtkRange* range, voicePage_t* vpp)
 {
 	guint val = gtk_range_get_value(range);
-	sendCc(93, val);
+	if( vpp->pageType == SYNTH ){
+		sendCc(93, val);
+	} else {
+		sendExc(4, 0x10, 0x00,  0x12, val);
+	}
+
 	vpp->cho = val;
 }
 
@@ -310,3 +371,44 @@ void releaseChanged(GtkRange* range, voicePage_t* vpp)
 	vpp->decay = val;
 }
 
+void monoStereoSelected(GtkWidget* pListComboBox, voicePage_t* vpp)
+{
+	gchar* pName;
+	pName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(pListComboBox) );
+
+	if (!strcmp(pName, "Mono") ){
+		vpp->monoStereo = 0;
+		monauralInitSelected();
+	} else {
+		vpp->monoStereo = 1;
+		stereoInitSelected();
+	}
+	vpp->vol = initialAdVol;
+	vpp->pan = initialPanVal;
+
+	gtk_range_set_value( GTK_RANGE(vpp->volScale), initialAdVol);
+	gtk_range_set_value( GTK_RANGE(vpp->panScale), initialPanVal - 64);
+}
+
+void stereoInitSelected(void)
+{
+	sendExc(4, 0x11, 0x00, 0x00, 0x01); // set AD input as stereo signals : 11 00 00 01
+	sendExc(4, 0x10, 0x00, 0x00, 0x01); // set AD1 input as line level signal : 10 00 00 01
+	sendExc(4, 0x10, 0x01, 0x00, 0x01); //set AD2 input as line level signal : 10 01 00 01
+	sendExc(4, 0x10, 0x00, 0x14, 127); // set send level into variation 100%
+	sendExc(4, 0x10, 0x00, 0x12, 0); // set send level into directly chorus(effect1) 0%
+	sendExc(4, 0x02, 0x01, 0x56, 0); // set variation to main path return level 0%
+	sendExc(4, 0x10, 0x00, 0x0B, initialAdVol); // AD input master volume
+}
+
+void monauralInitSelected(void)
+{
+	sendExc(4, 0x11, 0x00, 0x00, 0x00); // set AD input as monaural signal
+	sendExc(4, 0x10, 0x00, 0x00, 0x01); // set AD1 input as line level signal
+	sendExc(4, 0x10, 0x01, 0x00, 0x01); //set AD2 input as line level signal
+	sendExc(4, 0x10, 0x00, 0x14, 127); // set send level into variation 100%
+	sendExc(4, 0x10, 0x00, 0x12, 0); // set send level into directly chorus(effect1) 0%
+	sendExc(4, 0x02, 0x01, 0x56, 0); // set variation to main path return level 0%
+	sendExc(4, 0x10, 0x00, 0x0B, initialAdVol); // AD1 input master volume on left channel
+	sendExc(4, 0x10, 0x01, 0x0B, 0); // AD2 input master volume 0% on right channel
+}

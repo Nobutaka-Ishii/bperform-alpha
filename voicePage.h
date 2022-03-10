@@ -35,6 +35,8 @@ struct _voicePage {
 	GList* toneEntries;
 	gchar* currentProgram;
 
+	int pageType; // 0 for MU100, 1 for AD input configuration
+	int monoStereo; // 0 for monaural, 1 for stereo
 	int monoEnabled;
 	int portaEnabled;
 	uint portaTime;
@@ -47,11 +49,10 @@ struct _voicePage {
 	uint rev;
 
 	// constructors
-	struct _voicePage* (*voicePageConstr)(void);
+	struct _voicePage* (*voicePageConstr)(int pageType);
 	GList* (*createToneEntries)(GtkWidget* combo);
 
 	// methods
-	//void (*programSelected)(GtkWidget* pListComboBox, GList* toneEntries);
 	void (*programSelected)(GtkWidget* pListComboBox, struct _voicePage*);
 	void (*volChanged)(GtkRange* range, struct _voicePage*);
 	void (*panChanged)(GtkRange* range, struct _voicePage*);
@@ -74,7 +75,7 @@ struct _eachTone{
 };
 typedef struct _eachTone eachTone_t;
 
-voicePage_t* voicePageConstr(void);
+voicePage_t* voicePageConstr(int pageType);
 GList* createToneEntries(FILE* fp);
 void programSelected(GtkWidget* pListComboBox, voicePage_t* vpp);
 //void programSelected(GtkWidget* pListComboBox, GList* toneEntries);
@@ -88,4 +89,7 @@ void choSend(GtkRange* range, voicePage_t* vpp);
 void attackChanged(GtkRange* range, voicePage_t* vpp);
 void releaseChanged(GtkRange* range, voicePage_t* vpp);
 void decayChanged(GtkRange* range, voicePage_t* vpp);
- 
+void monoStereoSelected(GtkWidget* pListComboBox, voicePage_t* vpp);
+void stereoInitSelected(void);
+void monauralInitSelected(void);
+

@@ -21,3 +21,5 @@ gboolean quit_button_pushed (GtkWidget* widget, GdkEvent *event, gpointer data);
 void destroy(void);
 void reverbsend( GtkRange* range, GdkEvent* event, gpointer data);
 
+enum {SYNTH, AD};
+
