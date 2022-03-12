@@ -1,8 +1,10 @@
 #include <gtk/gtk.h>
 #define EFFECT_NAME_LENGTH 64
+#define PARAM_LABEL_NAME_LENGTH 32
+#define MU100_EFFECT_PARAMS 16
 
 struct _param{
-	gchar* label;
+	gchar *label;
 	gint rangeMax;
 	gint rangeMin;
 };
@@ -13,7 +15,7 @@ struct _eachEffect {
 	guint msb;
 	guint lsb;
 	guint addrWidth; // some effects needs 2 byte with parameter value specification.
-	param param[16]; // MU100B's each effects has max 16 parameters.
+	param param[MU100_EFFECT_PARAMS];
 };
 typedef struct _eachEffect eachEffect_t;
 
@@ -28,7 +30,7 @@ struct _effectStrip {
 	GtkWidget* editWindowBox;
 	GList* effectList;
 	gchar stripName[16]; // effect strip itselves name i.e Insert1, Insert2, Variation
-	gchar currentEffectType[EFFECT_NAME_LENGTH];
+	eachEffect_t* currentEffect;
 	guint currentTargetChnl;
 
 	struct _effectStrip* (*effectStripConstr)(void);

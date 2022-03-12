@@ -11,6 +11,9 @@ void createTargetChnlComboBox(GtkWidget* comboBox);
 void chnlChanged(GtkWidget* combo, effectStrip_t* es);
 void effectTypeChanged(GtkWidget* combo, effectStrip_t* es);
 void effectScaleChanged(GtkRange* range, effectStrip_t* es);
+void editButtonClicked(GtkWidget* button, effectStrip_t* es);
+//GtkWidget* constructEachParamStrip( eachEffect_t* ef );
+void constructParamStrips( effectStrip_t* es);
 
 effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 {
@@ -25,6 +28,7 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	GtkWidget* editWindow;
 	GtkWidget* editWindowBox;
 	int stripType;
+	int itr;
 
 	// determine the effect group.
 	// Insert1, Insert2, Variation : INSERT
@@ -36,6 +40,13 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 
 	es = (effectStrip_t*)malloc(sizeof(effectStrip_t));
 	memset(es, 0, sizeof(effectStrip_t));
+	es->currentEffect = (eachEffect_t*)malloc(sizeof(eachEffect_t));
+	es->currentEffect->name = (gchar*)malloc(sizeof(gchar) * EFFECT_NAME_LENGTH);
+
+	for (itr = 0; itr < MU100_EFFECT_PARAMS; itr++){
+		es->currentEffect->param[itr].label = (gchar*)malloc(sizeof(gchar) * PARAM_LABEL_NAME_LENGTH);
+		strcpy(es->currentEffect->param[itr].label, "null");
+	}
 
 	strcpy(es->stripName, stripName);
 
@@ -60,6 +71,7 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	editButton = gtk_button_new_with_label("Edit");
 	editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_default_size( GTK_WINDOW(editWindow), 1, 600);
 
 	fp = fopen(path, "r");
 	es->effectList = prepEffects(fp);
@@ -71,9 +83,9 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	es->scale = scale;
 	es->label = label;
 	es->editButton = editButton;
-	es->editWindow = editWindowBox;
+	es->editWindow = editWindow;
 	es->editWindowBox = editWindowBox;
-	strcpy(es->currentEffectType, "Through");
+	strcpy(es->currentEffect->name, "Through");
 	es->currentTargetChnl = 0x7f; // targetChnl[0] = {"Off,0x7f"} 's entry.
 
 	// create channel combo box entries
@@ -101,6 +113,7 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	if( stripType == INSERT ) g_signal_connect(G_OBJECT(es->chnlComboBox),\
 		"changed", G_CALLBACK(chnlChanged), es);
 	g_signal_connect(G_OBJECT(es->typeComboBox), "changed", G_CALLBACK(effectTypeChanged), es);
+	g_signal_connect(G_OBJECT(es->editButton), "clicked", G_CALLBACK(editButtonClicked), es);
 
 	return es;
 }
@@ -133,6 +146,7 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 	guint msb;
 	guint lsb;
 	int stripType;
+	int itr;
 
 	stripType = INSERT;
 	if( (!strcmp("Chorus", es->stripName)) || (!strcmp("Reverb", es->stripName)) ){
@@ -147,13 +161,23 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 	msb = ((eachEffect_t*)list->data)->msb;
 	lsb = ((eachEffect_t*)list->data)->lsb;
 
-	strcpy(es->currentEffectType, ((eachEffect_t*)(list->data))->name);
+	strcpy(es->currentEffect->name, ((eachEffect_t*)(list->data))->name);
+	for( itr = 0; itr < MU100_EFFECT_PARAMS; itr++){
+		strcpy( es->currentEffect->param[itr].label, \
+			((eachEffect_t*)(list->data))->param[itr].label);
+
+		es->currentEffect->param[itr].rangeMin = \
+			((eachEffect_t*)(list->data))->param[itr].rangeMin;
+		es->currentEffect->param[itr].rangeMax = \
+			((eachEffect_t*)(list->data))->param[itr].rangeMax;
+
+	}
 
 	if( stripType == INSERT ){
 		if( strcmp("null", ((eachEffect_t*)list->data)->param[9].label) ){
 			//gtk_widget_set_sensitive(es->scale, TRUE);
-			gtk_range_set_range(GTK_RANGE(es->scale),
-				((eachEffect_t*)list->data)->param[9].rangeMin,
+			gtk_range_set_range(GTK_RANGE(es->scale), \
+				((eachEffect_t*)list->data)->param[9].rangeMin, \
 				((eachEffect_t*)list->data)->param[9].rangeMax);
 		} else {
 			//gtk_widget_set_sensitive(es->scale, FALSE);
@@ -174,7 +198,7 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 		sendExc(5 , 0x02, 0x01, 0x20, msb, lsb);
 	} else { // system reverb
 		sendExc(5 , 0x02, 0x01, 0x00, msb, lsb);
-	}	
+	}
 }
 
 void effectScaleChanged(GtkRange* range, effectStrip_t* es)
@@ -183,10 +207,10 @@ void effectScaleChanged(GtkRange* range, effectStrip_t* es)
 	guint val = gtk_range_get_value(range);
 
 	do {
-		if( !strcmp(es->currentEffectType, ((eachEffect_t*)(list->data))->name ) ) break;
+		if( !strcmp(es->currentEffect->name, ((eachEffect_t*)(list->data))->name ) ) break;
 		list = list->next;
 	} while( list );
-	strcpy(es->currentEffectType, ((eachEffect_t*)list->data)->name);
+	strcpy(es->currentEffect->name, ((eachEffect_t*)list->data)->name);
 	if( ((eachEffect_t*)list->data)->addrWidth == 2 ){
 		// this type of effect need 2-bytes width prameter specification.
 		if( !strcmp("Insert1", es->stripName) ){
@@ -213,7 +237,7 @@ void effectScaleChanged(GtkRange* range, effectStrip_t* es)
 void createEffectTypeComboBox(GtkWidget* comboBox, GList* list)
 {
 	do {
-		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox),\
+		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), \
 			((eachEffect_t*)(list->data))->name);
 		list = list->next;
 	} while( list );
@@ -229,6 +253,38 @@ void createTargetChnlComboBox(GtkWidget* comboBox)
 		entry = splitline(targetChnl[itr], ',', &fields);
 
 		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), entry[0]);
+	}
+}
+
+void editButtonClicked(GtkWidget* button, effectStrip_t* es)
+{
+	constructParamStrips(es);
+	gtk_widget_show_all(es->editWindow);
+	g_signal_connect( G_OBJECT(es->editWindow), "delete-event", G_CALLBACK(gtk_widget_hide), NULL);
+}
+
+void constructParamStrips( effectStrip_t* es )
+{
+	GtkWidget* eachParamStrip;
+	GtkWidget* label;
+	GtkWidget* scale;
+	eachEffect_t* ef = es->currentEffect;
+	int itr;
+
+	for( itr = 0; itr < MU100_EFFECT_PARAMS; itr++){
+		if( strcmp(ef->param[itr].label, "null") ) {
+			eachParamStrip = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+			gtk_widget_set_size_request(eachParamStrip, -1, 36);
+			label = gtk_label_new(ef->param[itr].label);
+			scale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, \
+				ef->param[itr].rangeMin, ef->param[itr].rangeMax, 1);
+			gtk_range_set_inverted( GTK_RANGE(scale), TRUE );
+			gtk_scale_set_value_pos(GTK_SCALE(scale), GTK_POS_BOTTOM);
+
+			gtk_box_pack_start( GTK_BOX(eachParamStrip), label, FALSE, FALSE, 0);
+			gtk_box_pack_start( GTK_BOX(eachParamStrip), scale, TRUE, TRUE, 0);
+			gtk_box_pack_start( GTK_BOX(es->editWindowBox), eachParamStrip, FALSE, 0, 0);
+		}
 	}
 }
 

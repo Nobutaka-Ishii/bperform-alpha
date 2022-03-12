@@ -105,7 +105,6 @@ int main(int argc, char** argv)
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	base = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
-
 		// ac1 window and layouts instance generation
 	ac1p = ac1constr();
 	voicePage0p = voicePageConstr(SYNTH);
