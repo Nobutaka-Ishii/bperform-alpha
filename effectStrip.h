@@ -28,8 +28,13 @@ struct _effectStrip {
 	GtkWidget* editButton;
 	GtkWidget* editWindow;
 	GtkWidget* editWindowBox;
+	GtkWidget* paramEditFixButton;
+	GtkWidget* paramEditFixStrip;
 	GList* effectList;
 	gchar stripName[16]; // effect strip itselves name i.e Insert1, Insert2, Variation
+	GtkWidget** paramScales; // on edit window
+	GtkWidget** paramLabels; // on edit window
+	GtkWidget** paramBoxes; // on edit window
 	eachEffect_t* currentEffect;
 	guint currentTargetChnl;
 
