@@ -13,7 +13,7 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es);
 void effectScaleChanged(GtkRange* range, effectStrip_t* es);
 void editButtonClicked(GtkWidget* button, effectStrip_t* es);
 void constructParamStrips( effectStrip_t* es);
-gboolean destroyEditWindow(GtkWidget editwindow, effectStrip_t* es);
+gboolean destroyEditWindow(effectStrip_t* es);
 
 effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 {
@@ -25,7 +25,6 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	GtkWidget* scale;
 	GtkWidget* label;
 	GtkWidget* editButton;
-	GtkWidget* editWindow;
 
 	int stripType;
 	int itr;
@@ -64,9 +63,6 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	label = gtk_label_new(stripName);
 	editButton = gtk_button_new_with_label("Edit");
 
-	editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_default_size( GTK_WINDOW(editWindow), 1, 600);
-
 	es->paramScales = (GtkWidget**)malloc(sizeof(GtkWidget*) * MU100_EFFECT_PARAMS);
 	es->paramLabels = (GtkWidget**)malloc(sizeof(GtkWidget*) * MU100_EFFECT_PARAMS);
 	es->paramBoxes = (GtkWidget**)malloc(sizeof(GtkWidget*) * MU100_EFFECT_PARAMS);
@@ -90,10 +86,8 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	es->scale = scale;
 	es->label = label;
 	es->editButton = editButton;
-	es->editWindow = editWindow;
 	strcpy(es->currentEffect->name, "Through");
 	es->currentTargetChnl = 0x7f; // targetChnl[0] = {"Off,0x7f"} 's entry.
-	//es->editWindowBox = editWindowBox;
 
 	// create channel combo box entries
 
@@ -153,7 +147,6 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 	int stripType;
 	int itr;
 
-
 	stripType = INSERT;
 	if( (!strcmp("Chorus", es->stripName)) || (!strcmp("Reverb", es->stripName)) ){
 		stripType = SYSTEM;
@@ -170,7 +163,7 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 		//gtk_widget_set_sensitive( es->editButton, FALSE);
 		gtk_range_set_range( GTK_RANGE(es->scale), 1, 2);
 		gtk_range_set_value( GTK_RANGE(es->scale), 1);
-		gtk_widget_set_sensitive( es->scale, FALSE);
+		//gtk_widget_set_sensitive( es->scale, FALSE);
 		return;
 	}
 
@@ -289,21 +282,28 @@ void editButtonClicked(GtkWidget* button, effectStrip_t* es)
 	//gtk_widget_set_sensitive( GTK_WIDGET(es->editButton), FALSE);
 	constructParamStrips(es);
 	gtk_widget_show_all(es->editWindow);
-	g_signal_connect( G_OBJECT(es->editWindow), "delete-event", G_CALLBACK(destroyEditWindow), es);
-	//g_signal_handlers_disconnect_by_func(G_OBJECT(es->editButton), G_CALLBACK(editButtonClicked), es);
+	g_signal_connect_swapped( G_OBJECT(es->editWindow), "delete-event", G_CALLBACK(destroyEditWindow), es);
+	//g_signal_connect( G_OBJECT(es->editWindow), "delete-event", G_CALLBACK(destroyEditWindow), es);
 }
 
-gboolean destroyEditWindow(GtkWidget editwindow, effectStrip_t* es){
-	g_print("destroy edit window");
-	//gtk_widget_destroy( es->editWindowBox);
-	gtk_widget_destroy( GTK_WIDGET(es->paramScales[0]) );
-	gtk_widget_destroy( GTK_WIDGET(es->paramLabels[0]) );
-	gtk_widget_destroy( GTK_WIDGET(es->paramBoxes[0]) );
-/*
-	g_signal_connect(G_OBJECT(es->editButton), "clicked", G_CALLBACK(editButtonClicked), es);
-	gtk_widget_set_sensitive( GTK_WIDGET(es->editButton), TRUE);
-	gtk_widget_hide(es->editWindow);
-*/
+gboolean destroyEditWindow(effectStrip_t* es){
+	int itr;
+
+	//gtk_widget_set_sensitive( GTK_WIDGET(es->editButton), TRUE);
+	gtk_widget_destroy( es->editWindow );
+	es->editWindow = NULL;
+	es->editWindowBox = NULL;
+	es->paramEditFixStrip = NULL;
+	es->paramEditFixButton = NULL;
+
+	for( itr = 0; itr < MU100_EFFECT_PARAMS; itr++){
+		if( strcmp(es->currentEffect->param[itr].label, "null") ){ 
+			es->paramScales[itr] = NULL;
+			es->paramLabels[itr] = NULL;
+			es->paramBoxes[itr] = NULL;
+		}
+	}
+
 	return FALSE;
 }
 
@@ -312,12 +312,14 @@ void constructParamStrips( effectStrip_t* es )
 	eachEffect_t* ef = es->currentEffect;
 	GtkWidget* paramEditFixButton;
 	GtkWidget* paramEditFixStrip;
+	GtkWidget* editWindow;
 	GtkWidget* editWindowBox;
 	GtkWidget* label;
 	GtkWidget* scale;
 	GtkWidget* box;
 	int itr;
 
+	editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	for( itr = 0; itr < MU100_EFFECT_PARAMS; itr++){
 		if( strcmp(ef->param[itr].label, "null") ) {
@@ -337,16 +339,17 @@ void constructParamStrips( effectStrip_t* es )
 			gtk_box_pack_start( GTK_BOX(editWindowBox), box, FALSE, 0, 0);
 		}
 	}
+	gtk_window_set_default_size( GTK_WINDOW(editWindow), 1, 600);
 	paramEditFixButton = gtk_button_new_with_label("OK");
 	paramEditFixStrip = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	es->editWindowBox = editWindowBox;
+	es->editWindow = editWindow;
 	es->paramEditFixButton = paramEditFixButton;
 	es->paramEditFixStrip = paramEditFixStrip;
 
 	gtk_box_pack_end( GTK_BOX(paramEditFixStrip), paramEditFixButton, FALSE, FALSE, 0);
 	gtk_box_pack_end( GTK_BOX(editWindowBox), paramEditFixStrip, FALSE, FALSE, 0);
-	gtk_container_add( GTK_CONTAINER(es->editWindow), editWindowBox );
-	gtk_widget_show_all(es->editWindow);
+	gtk_container_add( GTK_CONTAINER(editWindow), GTK_WIDGET(editWindowBox) );
 }
 
 void paramValChanged(GtkWidget* scale, effectStrip_t* es)
