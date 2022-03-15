@@ -24,7 +24,6 @@ struct _eachParamStrip {
 	GtkWidget* paramLabel;
 	GtkWidget* paramBox;
 	GtkWidget* paramScale;
-	//void (*paramScaleTouchFunc)(GtkWidget* scale, void* es);
 };
 typedef struct _eachParamStrip eachParamStrip_t;
 

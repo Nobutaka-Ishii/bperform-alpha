@@ -347,13 +347,48 @@ void packParamStripsIntoEditWindow ( effectStrip_t* es )
 
 void paramValChanged(GtkWidget* scale, effectStrip_t* es)
 {
-	guint val = gtk_range_get_value( GTK_RANGE(scale) );
+	int itr;
+	gint val = gtk_range_get_value( GTK_RANGE(scale) );
+	guint valMsb;
+	guint valLsb;
+	gboolean targetParamNum[MU100_EFFECT_PARAMS];
 
-		// define which scale is tweaked.
-	g_print("param: %d\n", val);
-}
+		// determine non-null parameters
+	for( itr = 0; itr < MU100_EFFECT_PARAMS; itr++){
+		if( strcmp("null", es->currentEffect.param[itr].label) ) targetParamNum[itr] = TRUE;
+		else targetParamNum[itr] = FALSE;
+	}
 
-void paramScaleTouchFunc(GtkWidget* scale, void* es)
-{
+	for( itr = 0; itr < MU100_EFFECT_PARAMS; itr++){
+		if( !targetParamNum[itr] ) continue;
+		if( scale == es->paramStrips[itr]->paramScale ) break;
+	} // parameter strip number turned out.
+
+	if( !strcmp(es->stripName, "Insert1") ){
+		if( es->currentEffect.addrWidth == 1){
+			sendExc(4, 0x03, 0x00, itr+2, val);
+		}else{
+			valLsb = val & 0x000f;
+			valMsb = (val >>8) & 0x000f;
+			sendExc(5, 0x03, 0x00, 0x30 + (itr*2), valMsb, valLsb);
+		}
+	} else if( !strcmp(es->stripName, "Insert2") ){
+		if( es->currentEffect.addrWidth == 1){
+			sendExc(4, 0x03, 0x01, itr+2, val);
+		}else{
+			valLsb = val & 0x000f;
+			valMsb = (val >>8) & 0x000f;
+			sendExc(5, 0x03, 0x00, 0x30 + (itr*2), valMsb, valLsb);
+		}
+	} else if( !strcmp(es->stripName, "Variation") ){
+		// variation effects' parameter are always 2-byte width
+		valLsb = val & 0x000f;
+		valMsb = (val >>8) & 0x000f;
+		sendExc(5, 0x02, 0x01, 0x42 + (itr*2), valMsb, valLsb);
+	}
+/* system effects
+	Chorus
+	Reverb
+*/
 }
 
