@@ -30,7 +30,6 @@ GList* prepEffects(FILE* fp)
 		for(itr=0; itr < 18; itr++){ // effect name, msb:lsb:width field, and 1st to 16th parameter.
 			switch(itr){ // seeking all 18 tab-separated fields inside this block.
 				case 0:
-					effectEntry->name = (gchar*)malloc(sizeof(char) * EFFECT_NAME_LENGTH);
 					strcpy(effectEntry->name, eachEffect[0]);
 					break;
 				case 1:
@@ -41,7 +40,7 @@ GList* prepEffects(FILE* fp)
 					break;
 				default:
 					paramLine = splitline(eachEffect[itr], ':', &fields); 
-					effectEntry->param[itr -2].label = (gchar*)malloc(sizeof(gchar)* PARAM_LABEL_NAME_LENGTH);
+					//effectEntry->param[itr -2].label = (gchar*)malloc(sizeof(gchar)* PARAM_LABEL_NAME_LENGTH);
 					if( strcmp(paramLine[0], "null") ){
 						paramLine = splitline(eachEffect[itr], ':', &fields);
 						strcpy(effectEntry->param[itr-2].label, paramLine[0]);

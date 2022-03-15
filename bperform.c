@@ -193,27 +193,19 @@ int main(int argc, char** argv)
 	voicePage1 = gtk_button_new_with_label("hoge");
 
 	voicePages = gtk_notebook_new();
-	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
-		voicePage0p->voicePage , GTK_WIDGET(gtk_label_new("Voice1") ) );
-	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
-		voicePage1, GTK_WIDGET(gtk_label_new("Voice2") ) );
-	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
-		adPage->voicePage, GTK_WIDGET(gtk_label_new("AD input") ) );
-
+	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages), voicePage0p->voicePage , GTK_WIDGET(gtk_label_new("Voice1") ) );
+	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages), voicePage1, GTK_WIDGET(gtk_label_new("Voice2") ) );
+	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages), adPage->voicePage, GTK_WIDGET(gtk_label_new("AD input") ) );
 /*
-	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
-		voiceBox, GTK_WIDGET(gtk_label_new("Voice2") ) );
-	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages),\
-		voiceBox, GTK_WIDGET(gtk_label_new("Voice3") ) );
+	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages), voiceBox, GTK_WIDGET(gtk_label_new("Voice2") ) );
+	gtk_notebook_append_page( GTK_NOTEBOOK(voicePages), voiceBox, GTK_WIDGET(gtk_label_new("Voice3") ) );
 */
 
 	// callback function settings
 
 		// window events by window manager
-	g_signal_connect(G_OBJECT(window), "delete_event",\
-		G_CALLBACK(delete_event), NULL);
-	g_signal_connect(G_OBJECT(window), "destroy",\
-		G_CALLBACK(destroy), NULL);
+	g_signal_connect(G_OBJECT(window), "delete_event", G_CALLBACK(delete_event), NULL);
+	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(destroy), NULL);
 	g_signal_connect(G_OBJECT(ac1menu), "activate", G_CALLBACK( ac1p->ac1menuSelected ), ac1p);
 
 
@@ -236,11 +228,11 @@ int main(int argc, char** argv)
 	// widgets boxing
 
 	gtk_box_pack_start( GTK_BOX(exceptMenu), voicePages, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(exceptMenu), ins0strip->effectBox, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(exceptMenu), ins1strip->effectBox, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(exceptMenu), varStrip->effectBox, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(exceptMenu), choStrip->effectBox, TRUE, 0, 0);
-	gtk_box_pack_start( GTK_BOX(exceptMenu), revStrip->effectBox, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(exceptMenu), ins0strip->effectStripBox, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(exceptMenu), ins1strip->effectStripBox, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(exceptMenu), varStrip->effectStripBox, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(exceptMenu), choStrip->effectStripBox, TRUE, 0, 0);
+	gtk_box_pack_start( GTK_BOX(exceptMenu), revStrip->effectStripBox, TRUE, 0, 0);
 
 	gtk_box_pack_start( GTK_BOX(base), menubar, FALSE, TRUE, 0);
 	gtk_box_pack_start( GTK_BOX(base), exceptMenu, TRUE, TRUE, 0);

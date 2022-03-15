@@ -2,27 +2,38 @@
 #define EFFECT_NAME_LENGTH 64
 #define PARAM_LABEL_NAME_LENGTH 32
 #define MU100_EFFECT_PARAMS 16
+#define EFFECT_STRIP_TYPE_NAME_LENGTH 16
 
 struct _param{
-	gchar *label;
+	gchar label[PARAM_LABEL_NAME_LENGTH];
 	gint rangeMax;
 	gint rangeMin;
 };
-typedef struct _param param;
+typedef struct _param param_t;
 
 struct _eachEffect {
-	gchar* name;
+	gchar name[EFFECT_NAME_LENGTH];
 	guint msb;
 	guint lsb;
-	guint addrWidth; // some effects needs 2 byte with parameter value specification.
-	param param[MU100_EFFECT_PARAMS];
+	guint addrWidth; // some effects needs 2 byte width parameter value specification.
+	param_t param[MU100_EFFECT_PARAMS];
 };
 typedef struct _eachEffect eachEffect_t;
 
+struct _eachParamStrip {
+	int paramNum; // 0 - 15, each means effect parameter #1 - #16 respectively.
+	GtkWidget* paramScale;
+	GtkWidget* paramLabel;
+	GtkWidget* paramBox;
+	//void (*paramScaleTouchFunc)(GtkWidget* scale, void* es);
+};
+
+typedef struct _eachParamStrip eachParamStrip_t;
+
 struct _effectStrip {
-	GtkWidget* effectBox; // this is the one to be packed on the main window
+	GtkWidget* effectStripBox; // this is the one to be packed on the main window
 	GtkWidget* chnlComboBox;
-	GtkWidget* typeComboBox;
+	GtkWidget* effectTypeComboBox;
 	GtkWidget* scale;
 	GtkWidget* label;
 	GtkWidget* editButton;
@@ -31,11 +42,9 @@ struct _effectStrip {
 	GtkWidget* paramEditFixButton;
 	GtkWidget* paramEditFixStrip;
 	GList* effectList;
-	gchar stripName[16]; // effect strip itselves name i.e Insert1, Insert2, Variation
-	GtkWidget** paramScales; // on edit window
-	GtkWidget** paramLabels; // on edit window
-	GtkWidget** paramBoxes; // on edit window
-	eachEffect_t* currentEffect;
+	gchar stripName[EFFECT_STRIP_TYPE_NAME_LENGTH];
+	eachParamStrip_t* paramStrips[MU100_EFFECT_PARAMS];
+	eachEffect_t currentEffect;
 	guint currentTargetChnl;
 
 	struct _effectStrip* (*effectStripConstr)(void);
@@ -44,5 +53,6 @@ struct _effectStrip {
 typedef struct _effectStrip effectStrip_t;
 
 effectStrip_t* effectStripConstr(gchar* stripName, gchar* path); // path is effect list text.
+void paramScaleTouchFunc(GtkWidget* scale, void* es);
 GList* prepEffects(FILE* fp);
 
