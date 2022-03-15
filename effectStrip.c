@@ -15,6 +15,7 @@ void editButtonClicked(GtkWidget* button, effectStrip_t* es);
 void removeParamStripsFromEditWindow( effectStrip_t* es);
 void packParamStripsIntoEditWindow( effectStrip_t* es);
 gboolean destroyEditWindow(effectStrip_t* es);
+void paramValChanged(GtkWidget* scale, effectStrip_t* es);
 
 effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 {
@@ -182,11 +183,6 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 	msb = ((eachEffect_t*)list->data)->msb;
 	lsb = ((eachEffect_t*)list->data)->lsb;
 
-	//gtk_widget_set_sensitive( es->editButton, TRUE);
-	gtk_range_set_range( GTK_RANGE(es->scale), \
-			((eachEffect_t*)(list->data))->param[9].rangeMin, \
-			((eachEffect_t*)(list->data))->param[9].rangeMax);
-	gtk_widget_set_sensitive( es->scale, TRUE);
 
 	strcpy(es->currentEffect.name, ((eachEffect_t*)(list->data))->name);
 	for( itr = 0; itr < MU100_EFFECT_PARAMS; itr++){
@@ -201,9 +197,11 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 	if( stripType == INSERT ){
 		if( strcmp("null", ((eachEffect_t*)list->data)->param[9].label) ){
 			//gtk_widget_set_sensitive(es->scale, TRUE);
+			gtk_range_set_round_digits(GTK_RANGE(es->scale), 1);
 			gtk_range_set_range(GTK_RANGE(es->scale), \
 				((eachEffect_t*)list->data)->param[9].rangeMin, \
 				((eachEffect_t*)list->data)->param[9].rangeMax);
+			//gtk_widget_set_sensitive( es->scale, TRUE);
 		} else {
 			//gtk_widget_set_sensitive(es->scale, FALSE);
 			//gtk_range_set_range(GTK_RANGE(es->scale), 0, 0);
@@ -321,24 +319,28 @@ void packParamStripsIntoEditWindow ( effectStrip_t* es )
 		if( strcmp(ef->param[itr].label, "null") ) {
 			eachParamStrip_t* eps = (eachParamStrip_t*)malloc(sizeof(eachParamStrip_t));
 			memset(eps, 0, sizeof(eachParamStrip_t));
+
 			es->paramStrips[itr] = eps;
 			eps->paramScale = gtk_scale_new(GTK_ORIENTATION_VERTICAL, NULL);
 			eps->paramLabel = gtk_label_new("");
 			eps->paramBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	
-			// parameter name initialization
-			//es->currentEffect.param[itr].label = (gchar*)malloc(sizeof(gchar) * PARAM_LABEL_NAME_LENGTH);
 			gtk_label_set_text(GTK_LABEL(eps->paramLabel),ef->param[itr].label);
+			gtk_range_set_round_digits(GTK_RANGE(eps->paramScale), 0);
 			gtk_range_set_range(GTK_RANGE(eps->paramScale),
 				ef->param[itr].rangeMin, ef->param[itr].rangeMax);
+			gtk_range_set_value(GTK_RANGE(eps->paramScale),
+				(ef->param[itr].rangeMin + ef->param[itr].rangeMax)/2 );
 	
 			gtk_range_set_inverted(GTK_RANGE(eps->paramScale),TRUE);
 			gtk_scale_set_value_pos(GTK_SCALE(eps->paramScale),GTK_POS_BOTTOM);
 	
-	
 			gtk_box_pack_start( GTK_BOX(eps->paramBox), eps->paramLabel, FALSE, FALSE, 0);
 			gtk_box_pack_start( GTK_BOX(eps->paramBox), eps->paramScale, TRUE, TRUE, 0);
-			gtk_box_pack_start(GTK_BOX(es->editWindowBox), eps->paramBox, FALSE, 0, 0);
+			gtk_box_pack_start( GTK_BOX(es->editWindowBox), eps->paramBox, FALSE, 0, 0);
+
+			g_signal_connect( G_OBJECT(eps->paramScale), "value-changed",
+				G_CALLBACK(paramValChanged), es);
 		}
 	}
 }
@@ -348,7 +350,7 @@ void paramValChanged(GtkWidget* scale, effectStrip_t* es)
 	guint val = gtk_range_get_value( GTK_RANGE(scale) );
 
 		// define which scale is tweaked.
-	g_print("%d\n", val);
+	g_print("param: %d\n", val);
 }
 
 void paramScaleTouchFunc(GtkWidget* scale, void* es)

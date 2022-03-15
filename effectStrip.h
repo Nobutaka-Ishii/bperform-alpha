@@ -21,13 +21,11 @@ struct _eachEffect {
 typedef struct _eachEffect eachEffect_t;
 
 struct _eachParamStrip {
-	int paramNum; // 0 - 15, each means effect parameter #1 - #16 respectively.
-	GtkWidget* paramScale;
 	GtkWidget* paramLabel;
 	GtkWidget* paramBox;
+	GtkWidget* paramScale;
 	//void (*paramScaleTouchFunc)(GtkWidget* scale, void* es);
 };
-
 typedef struct _eachParamStrip eachParamStrip_t;
 
 struct _effectStrip {
