@@ -78,13 +78,14 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 		scale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1, 127, 1);
 			// 1 is the hard coded min value for "Through" entry.
 		gtk_range_set_value( GTK_RANGE(scale), 1);
-		//gtk_widget_set_sensitive( GTK_WIDGET(scale), FALSE);
+		gtk_widget_set_sensitive( GTK_WIDGET(scale), FALSE);
 	}
 
 	paramEditFixButton = gtk_button_new_with_label("OK");
 	paramEditFixStrip = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	editWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	editWindowBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	gtk_window_set_default_size(GTK_WINDOW(editWindow), -1, 300);
 
 		// On edit window, OK button's strip is always valid.
 		// Other parameters' strips depends on.
@@ -164,15 +165,15 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 	effectName = gtk_combo_box_text_get_active_text( GTK_COMBO_BOX_TEXT(combo) );
 
 	if( !strcmp(effectName, "Through") || !strcmp(effectName, "Off") ){
-		//gtk_widget_set_sensitive( es->editButton, FALSE);
+		gtk_widget_set_sensitive( es->editButton, FALSE);
 	}
 
 	if( !strcmp(effectName, "Through") ||
 		!strcmp(effectName, "Off") ){
-		//gtk_widget_set_sensitive( es->editButton, FALSE);
+		gtk_widget_set_sensitive( es->editButton, FALSE);
 		gtk_range_set_range( GTK_RANGE(es->scale), 1, 2);
 		gtk_range_set_value( GTK_RANGE(es->scale), 1);
-		//gtk_widget_set_sensitive( es->scale, FALSE);
+		gtk_widget_set_sensitive( es->scale, FALSE);
 		return;
 	}
 
@@ -192,19 +193,20 @@ void effectTypeChanged(GtkWidget* combo, effectStrip_t* es)
 			((eachEffect_t*)(list->data))->param[itr].rangeMin;
 		es->currentEffect.param[itr].rangeMax = \
 			((eachEffect_t*)(list->data))->param[itr].rangeMax;
+		es->currentEffect.addrWidth = \
+			((eachEffect_t*)(list->data))->addrWidth;
 	}
 
 	if( stripType == INSERT ){
 		if( strcmp("null", ((eachEffect_t*)list->data)->param[9].label) ){
-			//gtk_widget_set_sensitive(es->scale, TRUE);
+			gtk_widget_set_sensitive(es->scale, TRUE);
 			gtk_range_set_round_digits(GTK_RANGE(es->scale), 1);
 			gtk_range_set_range(GTK_RANGE(es->scale), \
 				((eachEffect_t*)list->data)->param[9].rangeMin, \
 				((eachEffect_t*)list->data)->param[9].rangeMax);
-			//gtk_widget_set_sensitive( es->scale, TRUE);
 		} else {
-			//gtk_widget_set_sensitive(es->scale, FALSE);
-			//gtk_range_set_range(GTK_RANGE(es->scale), 0, 0);
+			gtk_widget_set_sensitive(es->scale, FALSE);
+			gtk_range_set_range(GTK_RANGE(es->scale), 0, 0);
 		}
 	} else {
 			// effect return value range is always between 0 and 0x7f by MU100's hw spec.
@@ -281,16 +283,12 @@ void createTargetChnlComboBox(GtkWidget* comboBox)
 
 void editButtonClicked(GtkWidget* button, effectStrip_t* es)
 {
-	gchar* effectName;
-	effectName = gtk_combo_box_text_get_active_text( \
-		GTK_COMBO_BOX_TEXT(es->effectTypeComboBox) );
-	//gtk_widget_set_sensitive( GTK_WIDGET(es->editButton), FALSE);
-	g_print("effect name on the edit button clicking: %s\n", effectName);
+	gtk_widget_set_sensitive( GTK_WIDGET(es->editButton), FALSE);
 	gtk_widget_show_all(es->editWindow);
 }
 
 gboolean destroyEditWindow(effectStrip_t* es){
-	g_print("edit window destroyed functin\n");
+	gtk_widget_set_sensitive( GTK_WIDGET(es->editButton), TRUE);
 	gtk_widget_hide(es->editWindow);
 	return TRUE;
 }
@@ -368,22 +366,22 @@ void paramValChanged(GtkWidget* scale, effectStrip_t* es)
 		if( es->currentEffect.addrWidth == 1){
 			sendExc(4, 0x03, 0x00, itr+2, val);
 		}else{
-			valLsb = val & 0x000f;
-			valMsb = (val >>8) & 0x000f;
+			valLsb = val & 0x00ff;
+			valMsb = (val >>8) & 0x00ff;
 			sendExc(5, 0x03, 0x00, 0x30 + (itr*2), valMsb, valLsb);
 		}
 	} else if( !strcmp(es->stripName, "Insert2") ){
 		if( es->currentEffect.addrWidth == 1){
 			sendExc(4, 0x03, 0x01, itr+2, val);
 		}else{
-			valLsb = val & 0x000f;
-			valMsb = (val >>8) & 0x000f;
-			sendExc(5, 0x03, 0x00, 0x30 + (itr*2), valMsb, valLsb);
+			valLsb = val & 0x00ff;
+			valMsb = (val >>8) & 0x00ff;
+			sendExc(5, 0x03, 0x01, 0x30 + (itr*2), valMsb, valLsb);
 		}
 	} else if( !strcmp(es->stripName, "Variation") ){
 		// variation effects' parameter are always 2-byte width
-		valLsb = val & 0x000f;
-		valMsb = (val >>8) & 0x000f;
+		valLsb = val & 0x00ff;
+		valMsb = (val >>8) & 0x00ff;
 		sendExc(5, 0x02, 0x01, 0x42 + (itr*2), valMsb, valLsb);
 	}
 /* system effects
