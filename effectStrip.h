@@ -17,6 +17,7 @@ struct _eachEffect {
 	guint lsb;
 	guint addrWidth; // some effects needs 2 byte width parameter value specification.
 	param_t param[MU100_EFFECT_PARAMS];
+	gchar mainParam[PARAM_LABEL_NAME_LENGTH];
 };
 typedef struct _eachEffect eachEffect_t;
 
@@ -32,6 +33,7 @@ struct _effectStrip {
 	GtkWidget* chnlComboBox;
 	GtkWidget* effectTypeComboBox;
 	GtkWidget* scale;
+	GtkWidget* mainParamLabel;
 	GtkWidget* label;
 	GtkWidget* editButton;
 	GtkWidget* editWindow;
