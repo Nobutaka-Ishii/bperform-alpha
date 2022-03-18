@@ -7,7 +7,7 @@
 const int initialAdVol = 0x00;
 const int initialPanVal = 0x40;
 
-voicePage_t* voicePageConstr(int pageType)
+voicePage_t* voicePageConstr(gboolean pageType)
 {
 	voicePage_t* vpp;
 	FILE* fp;
@@ -42,6 +42,7 @@ voicePage_t* voicePageConstr(int pageType)
 	GtkWidget* choSendScale;
 	GtkWidget* choSendLabel;
 	GtkWidget* prgListComboBox;
+	GtkWidget* velFixCheckBox;
 
 	vpp = (voicePage_t*)malloc(sizeof(voicePage_t));
 	memset(vpp, 0, sizeof(voicePage_t));
@@ -49,6 +50,7 @@ voicePage_t* voicePageConstr(int pageType)
 	voicePage = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	pageContents = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	portaCheckBox = gtk_check_button_new_with_label("Portament");
+	velFixCheckBox = gtk_check_button_new_with_label("Fixed Velocity");
 	portaTimeScale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 127, 1);
 	monoCheckBox = gtk_check_button_new_with_label("Mono");
 	prgListComboBox = gtk_combo_box_text_new();
@@ -101,10 +103,11 @@ voicePage_t* voicePageConstr(int pageType)
 	vpp->pan = 0x40; // value for being on the center position
 	vpp->cho = 0;
 	vpp->rev = 0;
-	vpp->monoEnabled = 0;
-	vpp->portaEnabled = 0;
+	vpp->monoEnabled = FALSE;
+	vpp->portaEnabled = FALSE;
+	vpp->velFixEnabled = FALSE;
 	vpp->portaTime = 0;
-	vpp->monoStereo = 0;
+	vpp->monoStereo = FALSE;
 
 		// making GUI instances following initial values
 	gtk_range_set_value( GTK_RANGE(volScale), vpp->vol);
@@ -119,6 +122,7 @@ voicePage_t* voicePageConstr(int pageType)
 	vpp->pageContents = pageContents;
 	vpp->portaCheckBox = portaCheckBox;
 	vpp->portaTimeScale = portaTimeScale;
+	vpp->velFixCheckBox = velFixCheckBox;
 	vpp->monoCheckBox = monoCheckBox;
 	vpp->prgListComboBox = prgListComboBox;
 	vpp->volBox = volBox;
@@ -149,6 +153,7 @@ voicePage_t* voicePageConstr(int pageType)
 	vpp->attackChanged = attackChanged;
 	vpp->decayChanged = decayChanged;
 	vpp->releaseChanged = releaseChanged;
+	vpp->velFixCheckBoxChecked = velFixCheckBoxChecked;
 	vpp->monoCheckBoxChecked = monoCheckBoxChecked;
 	vpp->portaCheckBoxChecked = portaCheckBoxChecked;
 	vpp->portaTimeChanged = portaTimeChanged;
@@ -169,6 +174,7 @@ voicePage_t* voicePageConstr(int pageType)
 	gtk_box_pack_start( GTK_BOX(panBox), panLabel, FALSE, FALSE, 0);
 	gtk_box_pack_start( GTK_BOX(panBox), panScale, TRUE, TRUE, 0);
 	if( pageType == SYNTH ){
+		gtk_box_pack_start( GTK_BOX(pageLeft), velFixCheckBox, FALSE, TRUE, 0);
 		gtk_box_pack_start( GTK_BOX(pageLeft), attackBox, FALSE, TRUE, 0);
 		gtk_box_pack_start( GTK_BOX(pageLeft), releaseBox, FALSE, TRUE, 0);
 		gtk_box_pack_start( GTK_BOX(pageLeft), decayBox, FALSE, TRUE, 0);
@@ -212,6 +218,8 @@ voicePage_t* voicePageConstr(int pageType)
 			G_CALLBACK(vpp->portaCheckBoxChecked), vpp);
 		g_signal_connect(G_OBJECT(monoCheckBox), "clicked",\
 			G_CALLBACK(vpp->monoCheckBoxChecked), vpp); 
+		g_signal_connect(G_OBJECT(velFixCheckBox), "clicked", \
+			G_CALLBACK(vpp->velFixCheckBoxChecked), vpp); 
 		g_signal_connect(G_OBJECT(portaTimeScale), "value-changed",\
 			G_CALLBACK(vpp->portaTimeChanged), vpp);
 	}
@@ -285,6 +293,16 @@ void portaCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* vpp)
 	}
 
 	vpp->portaEnabled = !vpp->portaEnabled;
+}
+
+void velFixCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* vpp)
+{
+	if(!vpp->velFixEnabled){ // i.e false case, in not-fixed status
+		sendExc(4, 0x08, 0x00, 0x0D, 0x7f); // set fixed status
+	}else{
+		sendExc(4, 0x08, 0x00, 0x0D, 0x40);
+	}
+	vpp->velFixEnabled = !vpp->velFixEnabled;
 }
 
 void portaTimeChanged(GtkRange* scale, voicePage_t* vpp)

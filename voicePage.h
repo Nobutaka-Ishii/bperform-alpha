@@ -8,6 +8,7 @@ struct _voicePage {
 	GtkWidget* pageContents;
 	GtkWidget* pageLeft;
 	GtkWidget* pageRight;
+	GtkWidget* velFixCheckBox;
 	GtkWidget* portaCheckBox;
 	GtkWidget* portaTimeScale;
 	GtkWidget* monoCheckBox;
@@ -36,9 +37,10 @@ struct _voicePage {
 	gchar* currentProgram;
 
 	int pageType; // 0 for MU100, 1 for AD input configuration
-	int monoStereo; // 0 for monaural, 1 for stereo
-	int monoEnabled;
-	int portaEnabled;
+	gboolean monoStereo; // False for monaural, True for stereo
+	gboolean monoEnabled;
+	gboolean portaEnabled;
+	gboolean velFixEnabled;
 	uint portaTime;
 	uint vol;
 	uint pan;
@@ -59,6 +61,7 @@ struct _voicePage {
 	void (*attackChanged)(GtkRange* range, struct _voicePage*);
 	void (*decayChanged)(GtkRange* range, struct _voicePage*);
 	void (*releaseChanged)(GtkRange* range, struct _voicePage*);
+	void (*velFixCheckBoxChecked)(GtkWidget* checkbutton, struct _voicePage*);
 	void (*monoCheckBoxChecked)(GtkWidget* checkbutton, struct _voicePage*);
 	void (*portaCheckBoxChecked)(GtkWidget* checkbutton, struct _voicePage*);
 	void (*portaTimeChanged)(GtkRange* range, struct _voicePage*);
@@ -78,9 +81,9 @@ typedef struct _eachTone eachTone_t;
 voicePage_t* voicePageConstr(int pageType);
 GList* createToneEntries(FILE* fp);
 void programSelected(GtkWidget* pListComboBox, voicePage_t* vpp);
-//void programSelected(GtkWidget* pListComboBox, GList* toneEntries);
 void volChanged(GtkRange* range, voicePage_t* vpp);
 void panChanged(GtkRange* range, voicePage_t* vpp);
+void velFixCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* voicePage);
 void monoCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* voicePage);
 void portaCheckBoxChecked(GtkWidget* checkbutton, voicePage_t* voicePage); 
 void portaTimeChanged(GtkRange* range, voicePage_t* voicePage);
