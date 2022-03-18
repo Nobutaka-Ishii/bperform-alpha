@@ -34,6 +34,11 @@ void initializeSelected(GtkWidget* menu)
 	// set variation effect on the path(insertion mode) of AD1/2
 	sendExc(4, 0x02, 0x01, 0x5a, 0x00);
 
+	// insert1, insert2, variation effects are set to through mode.
+	sendExc(5, 0x03, 0x00, 0x00, 0x40, 0x00);
+	sendExc(5, 0x03, 0x01, 0x00, 0x40, 0x00);
+	sendExc(5, 0x02, 0x01, 0x40, 0x40, 0x00);
+
 }
 
 int main(int argc, char** argv)
