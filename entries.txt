@@ -194,6 +194,21 @@ SquareLd2	0	6	80
 LMSquare	0	8	80
 Hollow	0	18	80
 Shroud	0	19	80
+2 Osc	0	35	80
+Mellow	0	64	80
+SoloSine	0	65	80
+SineLead	0	66	80
+Pulse Ld	0	67	80
+SyncLead	0	68	80
+ForcdOsc	0	69	80
+Accent	0	70	80
+Brick	0	71	80
+Alum	0	72	80
+Query	0	73	80
+FMSlwSwp	0	74	80
+SyncLdDb	0	75	80
+Curse	0	76	80
+OctvBeep	0	77	80
 Saw Ld	0	0	81
 Saw Ld 2	0	6	81
 ThickSaw	0	8	81
@@ -207,9 +222,44 @@ RezzySaw	0	27	81
 DoubleSaw	0	32	81
 Toy Lead	0	35	81
 Dim Saw	0	36	81
-CaliopLd	0	0	83
+PulseSaw	0	40	81
+Dr.Lead	0	41	81
+VeloLead	0	45	81
+Digger	0	64	81
+Dunce	0	65	81
+BrassSaw	0	66	81
+SawRiver	0	67	81
+BrPulsDb	0	68	81
+Saw Trp	0	69	81
+Hue	0	70	81
+StrghtSw	0	71	81
+StrtPuls	0	72	81
+PWMania	0	73	81
+Mod Saw	0	74	81
+Toad	0	75	81
+FatOctv	0	76	81
+Overdose	0	77	81
+PWMDecay	0	78	81
+SawDecay	0	79	81
+CaliopLd	0	0	82
+Novice	0	40	82
+VentSyn	0	64	82
+PureLead	0	65	82
+ElPrimtv	0	66	82
+Chiff Ld	0	0	83
 CharanLd	0	0	84
 Voice Ld	0	0	85
+SynthAsh	0	24	85
 Fifth Ld	0	0	86
+FifthLdS	0	8	86
+Big Five	0	35	86
 Bass&Ld	0	0	87
+NewAgePd	0	0	88
+Warm Pad	0	0	89
+PolySyPd	0	0	90
+ChoirPad	0	0	91
+BowedPad	0	0	92
+MetalPad	0	0	93
+Halo Pad	0	0	94
+SweepPad	0	0	95
 

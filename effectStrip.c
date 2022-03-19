@@ -14,7 +14,7 @@ void effectScaleValChanged(GtkRange* range, effectStrip_t* es);
 void editButtonClicked(GtkWidget* button, effectStrip_t* es);
 void removeParamStripsFromEditWindow( effectStrip_t* es);
 void packParamStripsIntoEditWindow( effectStrip_t* es);
-gboolean destroyEditWindow(effectStrip_t* es);
+gboolean destroyEditWindow(GtkWidget* widget, GdkEvent* event, effectStrip_t* es);
 void paramValChanged(GtkWidget* scale, effectStrip_t* es);
 void setCurrentEffect( effectStrip_t* es, GList* list, gchar* stripName);
 
@@ -124,7 +124,7 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 	g_signal_connect(G_OBJECT(es->scale), "value-changed", G_CALLBACK(effectScaleValChanged), es);
 	if( stripType == INSERT ) g_signal_connect(G_OBJECT(es->chnlComboBox), "changed", G_CALLBACK(chnlChanged), es);
 	g_signal_connect(G_OBJECT(es->effectTypeComboBox), "changed", G_CALLBACK(effectTypeChanged), es);
-	g_signal_connect_swapped( G_OBJECT(es->editWindow), "delete-event", G_CALLBACK(destroyEditWindow), es);
+	g_signal_connect( G_OBJECT(es->editWindow), "delete-event", G_CALLBACK(destroyEditWindow), es);
 	g_signal_connect(G_OBJECT(es->editButton), "clicked", G_CALLBACK(editButtonClicked), es);
 	return es;
 }
@@ -267,7 +267,7 @@ void editButtonClicked(GtkWidget* button, effectStrip_t* es)
 	gtk_widget_show_all(es->editWindow);
 }
 
-gboolean destroyEditWindow(effectStrip_t* es){
+gboolean destroyEditWindow(GtkWidget* widget, GdkEvent* event, effectStrip_t* es){
 	gtk_widget_set_sensitive( GTK_WIDGET(es->editButton), TRUE);
 	gtk_widget_hide(es->editWindow);
 	return TRUE;
