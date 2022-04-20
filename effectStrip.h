@@ -53,5 +53,5 @@ typedef struct _effectStrip effectStrip_t;
 
 effectStrip_t* effectStripConstr(gchar* stripName, gchar* path); // path is effect list text.
 void paramScaleTouchFunc(GtkWidget* scale, void* es);
-GList* prepEffects(FILE* fp);
+GList* prepEffects(int fd);
 

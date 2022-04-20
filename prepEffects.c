@@ -4,23 +4,35 @@
 #include <glib.h>
 #include <effectStrip.h>
 #include <splitline.h>
+#include <unistd.h>
 
 #define PARAM_LABEL_NAME_LENGTH 32
+#define LINEBUFLEN 1024
 
-GList* prepEffects(FILE* fp)
+GList* prepEffects(int fd)
 {
-	GList* list;
+	GList* list = NULL;
 	eachEffect_t* effectEntry;
-	char* line = NULL;
-	size_t n = 0;
+	char line[LINEBUFLEN];
+	ssize_t n = 0;
 	int itr;
+	int pos = 0; // head position of the file.
 	int fields; // actually not used, because I know the count of entries after splitting. 
 	char** eachEffect;
 	char** paramFields;
 
-	while( (getline(&line, &n, fp) ) != -1 ){
+	//memset(line, (char)'\0', LINEBUFLEN);
+	while(TRUE){
+		if( !(n = read(fd, line, LINEBUFLEN)) ) break;
+		for(itr = 0; itr < n ; itr++){
+			if(line[itr] == '\n') break;
+		}
+		pos += itr;
+		pos++;
+		lseek(fd, pos, SEEK_SET);
+
 		if( (line[0] == '\n') || (line[0] == '#') ) continue;
-		line[ strlen(line) - 1] = '\0'; // remove last lf character.
+		line[ itr ] = '\0'; // remove last lf character.
 		effectEntry = (eachEffect_t*)malloc(sizeof(eachEffect_t));
 		memset(effectEntry, 0, sizeof(eachEffect_t));
 

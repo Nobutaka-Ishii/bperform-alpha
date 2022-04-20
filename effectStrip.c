@@ -2,6 +2,9 @@
 #include <effectStrip.h>
 #include <splitline.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 char *targetChnl[] = {"Off,0x7f", "1,0x0", "2,0x1", "3,0x2", "4,0x3", "AD,0x40"};
 enum {INSERT, SYSTEM};
@@ -20,7 +23,7 @@ void setCurrentEffect( effectStrip_t* es, GList* list, gchar* stripName);
 
 effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 {
-	FILE* fp;
+	int fd;
 	effectStrip_t* es;
 	GtkWidget* effectStripBox;
 	GtkWidget* chnlComboBox;
@@ -37,9 +40,9 @@ effectStrip_t* effectStripConstr(gchar* stripName, gchar* path)
 
 	es = (effectStrip_t*)malloc(sizeof(effectStrip_t));
 
-	fp = fopen(path, "r");
-	es->effectList = prepEffects(fp);
-	fclose(fp);
+	fd = open(path, O_RDONLY);
+	es->effectList = prepEffects(fd);
+	close(fd);
 
 	strcpy(es->stripName, stripName);
 	// determine the effect group.
