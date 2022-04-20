@@ -79,7 +79,7 @@ struct _eachTone{
 typedef struct _eachTone eachTone_t;
 
 voicePage_t* voicePageConstr(int pageType);
-GList* createToneEntries(FILE* fp);
+GList* createToneEntries(int fd);
 void programSelected(GtkWidget* pListComboBox, voicePage_t* vpp);
 void volChanged(GtkRange* range, voicePage_t* vpp);
 void panChanged(GtkRange* range, voicePage_t* vpp);

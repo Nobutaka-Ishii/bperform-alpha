@@ -1,8 +1,12 @@
 #include <bperform.h>
 #include <voicePage.h>
 #include <splitline.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #define TONE_NAME_LENGTH 16
+#define LINEBUFLEN 1024
 
 const int initialAdVol = 0x00;
 const int initialPanVal = 0x40;
@@ -10,7 +14,7 @@ const int initialPanVal = 0x40;
 voicePage_t* voicePageConstr(gboolean pageType)
 {
 	voicePage_t* vpp;
-	FILE* fp;
+	int fd;
 	GList* toneEntries;
 
 	GtkWidget* voicePage;
@@ -78,10 +82,10 @@ voicePage_t* voicePageConstr(gboolean pageType)
 	choSendLabel = gtk_label_new("Chorus");
 	choSendScale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 127, 1);
 
-	if( (fp = fopen("./entries.txt", "r")) ){
+	if( (fd = open("./entries.txt", O_RDONLY)) ){
 	// toneEtnries construction
-		toneEntries = createToneEntries(fp);
-		fclose(fp);
+		toneEntries = createToneEntries(fd);
+		close(fd);
 	}
 	
 	if( pageType == SYNTH ){
@@ -238,16 +242,26 @@ voicePage_t* voicePageConstr(gboolean pageType)
 	return vpp;
 }
 
-GList* createToneEntries(FILE* fp)
+GList* createToneEntries(int fd)
 {
 	GList* toneEntries = NULL;
-	char* line;
+	char line[LINEBUFLEN];
 	char** eachToneLine;
 	eachTone_t* eachTonep;
-	size_t n = 0; // mandatory for getline, but can be ignored safely.
+	ssize_t n = 0;
+	int itr;
+	int pos = 0;
 	int fields; // actually not used, because I know the count of entries after splitting.
 
-	while( ( getline(&line, &n, fp) ) != -1 ){
+	while(TRUE){
+		if( !(n = read(fd, line, LINEBUFLEN)) ) break;
+		for(itr = 0; itr < n ; itr++){
+			if(line[itr] == '\n') break;
+		}
+		pos += itr;
+		pos++;
+		lseek(fd, pos, SEEK_SET);
+ 
 		if( (line[0] == '\n') || (line[0] == '#') ) continue;
 		line [ strlen(line) - 1 ] = '\0';
 		eachTonep = (eachTone_t*)malloc(sizeof(eachTone_t));
